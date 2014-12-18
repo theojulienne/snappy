@@ -29,7 +29,7 @@ test_regexp() {
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" 0 HUP INT QUIT ILL ABRT FPE SEGV PIPE TERM
-for test in tests/test_*; do
+for test in tests/*_test_*; do
     echo "Running $test"
     . "$test"
     if ! test ; then
