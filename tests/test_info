@@ -1,7 +1,6 @@
 test() {
     T="release: ubuntu-core/devel-proposed
-frameworks:
-apps:
-"
+frameworks: 
+apps: "
     test_equal "$T" snappy info
 }

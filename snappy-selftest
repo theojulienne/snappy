@@ -2,18 +2,27 @@
 
 set -e
 
+fail() {
+    echo "ERROR"
+    exit 1
+}
+
 test_equal() {
     echo "$1" > $TMPDIR/want
     shift
     "$@" 2>&1 > $TMPDIR/got
-    diff -u $TMPDIR/want $TMPDIR/got
+    if ! diff -u $TMPDIR/want $TMPDIR/got; then
+        fail()
+    fi
 }
 
 test_regexp() {
     REGEXP="$1"
     shift
     "$@" 2>&1 > $TMPDIR/got
-    grep "$REGEXP" $TMPDIR/got
+    if ! grep -q "$REGEXP" $TMPDIR/got; then
+        fail
+    fi
 }
 
 
