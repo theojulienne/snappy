@@ -1,5 +1,7 @@
 test() {
-       sudo snappy install hello-world
+       T="hello-world[[:space:]]+edge"
+       test_regexp "$T" sudo snappy install hello-world
+       
        T="Hello World!"
        test_equal "$T" hello-world.hello
 }
