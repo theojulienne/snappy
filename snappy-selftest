@@ -12,7 +12,7 @@ test_equal() {
     shift
     "$@" 2>&1 > $TMPDIR/got
     if ! diff -u $TMPDIR/want $TMPDIR/got; then
-        fail()
+        fail
     fi
 }
 
@@ -21,6 +21,7 @@ test_regexp() {
     shift
     "$@" 2>&1 > $TMPDIR/got
     if ! grep -q "$REGEXP" $TMPDIR/got; then
+        echo "Can not find '$REGEXP' in $(cat $TMPDIR/got)"
         fail
     fi
 }
