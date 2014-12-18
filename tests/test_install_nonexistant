@@ -1,0 +1,4 @@
+test() {
+       T="No package 'fizzler' for ubuntu-core/devel-proposed"
+       test_equal "$T" snappy install fizzler
+}

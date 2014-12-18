@@ -1,0 +1,9 @@
+test() {
+    # we test for the final line contains the docker command
+    # FIXME: test progress here too
+    T="docker[:blank:]+edge[:blank:]+[0-9.]+[:blank]+-[:blank:]+[0-9a-f]+[:blank:]+*"
+    test_regexp "$T" snappy install docker
+
+    # ensure its there
+    docker >/dev/null
+}
