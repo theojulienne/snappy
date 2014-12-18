@@ -20,8 +20,8 @@ test_regexp() {
     REGEXP="$1"
     shift
     "$@" 2>&1 > $TMPDIR/got
-    if ! grep -q "$REGEXP" $TMPDIR/got; then
-        echo "Can not find '$REGEXP' in $(cat $TMPDIR/got)"
+    if ! grep -E -q "$REGEXP" $TMPDIR/got; then
+        echo "Can not find '$REGEXP' in '$(cat $TMPDIR/got)'"
         fail
     fi
 }
