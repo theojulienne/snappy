@@ -1,0 +1,4 @@
+test() {
+    T="docker[[:space:]]+edge[[:space:]]+[0-9.]+[[:space:]]+-[[:space:]]+[0-9a-f]+[[:space:]]+*"    
+    test_regexp "$T" sudo snappy versions
+}

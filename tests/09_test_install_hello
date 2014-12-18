@@ -1,0 +1,5 @@
+test() {
+       sudo snappy install hello-world
+       T="Hello World!"
+       test_equal "$T" hello-world.hello
+}

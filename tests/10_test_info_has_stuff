@@ -1,0 +1,6 @@
+test() {
+    T="release: ubuntu-core/devel-proposed
+frameworks: docker
+apps: hello-world"
+    test_equal "$T" snappy info
+}
