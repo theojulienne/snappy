@@ -5,5 +5,5 @@ test() {
     test_regexp "$T" sudo snappy install docker
 
     # ensure its there
-    docker >/dev/null
+    docker 2>/dev/null
 }
