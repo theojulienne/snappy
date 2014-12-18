@@ -1,0 +1,7 @@
+test() {
+    T="ubuntu-core.*edge"
+    test_regexp "$T" snappy versions
+
+    T="Part.*Tag.*Installed.*Available.*Fingerprint.*Active"
+    test_regexp "$T" snappy versions
+}

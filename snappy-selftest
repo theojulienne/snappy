@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+test_equal() {
+    echo "$1" > $TMPDIR/want
+    shift
+    "$@" 2>&1 > $TMPDIR/got
+    diff -u $TMPDIR/want $TMPDIR/got
+}
+
+test_regexp() {
+    REGEXP="$1"
+    shift
+    "$@" 2>&1 > $TMPDIR/got
+    grep "$REGEXP" $TMPDIR/got
+}
+
+
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" 0 HUP INT QUIT ILL ABRT FPE SEGV PIPE TERM
+for test in tests/test_*; do
+    echo "Running $test"
+    . "$test"
+    if ! test ; then
+        echo "FAILED: $test"
+        exit 1
+    fi
+done
