@@ -1,6 +1,6 @@
 test() {
-    T="release: ubuntu-core/devel-proposed
+    T="^release: ubuntu-core/devel.*
 frameworks: 
 apps: "
-    test_equal "$T" snappy info
+    test_regexp "$T" snappy info
 }
