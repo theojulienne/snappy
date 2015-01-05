@@ -1,6 +1,5 @@
 test() {
-    T="^release: ubuntu-core/devel.*
-frameworks: docker
-apps: hello-world"
-    test_regexp "$T" snappy info
+    test_regexp "^release: ubuntu-core/devel.*" snappy info
+    test_regexp "^frameworks: docker" snappy info
+    test_regexp "^apps: hello-world" snappy info
 }
