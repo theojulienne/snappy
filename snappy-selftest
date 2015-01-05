@@ -2,6 +2,8 @@
 
 set -e
 
+MYDIR=$(dirname $0)
+
 fail() {
     echo "ERROR"
     exit 1
@@ -29,7 +31,7 @@ test_regexp() {
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" 0 HUP INT QUIT ILL ABRT FPE SEGV PIPE TERM
-for test in tests/*_test_*; do
+for test in $MYDIR/tests/*_test_*; do
     echo "Running $test"
     . "$test"
     if ! test ; then
