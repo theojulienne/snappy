@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -10,27 +10,22 @@ fail() {
 }
 
 test_equal() {
-    echo "$1" > $TMPDIR/want
+    local expected="$1"
     shift
-    "$@" 2>&1 > $TMPDIR/got
-    if ! diff -u $TMPDIR/want $TMPDIR/got; then
-        fail
-    fi
+    "$@" 2>&1 | diff -u <(echo "$expected") -
 }
 
 test_regexp() {
-    REGEXP="$1"
+    local REGEXP="$1"
     shift
-    "$@" 2>&1 > $TMPDIR/got
-    if ! grep -E -q "$REGEXP" $TMPDIR/got; then
-        echo "Can not find '$REGEXP' in '$(cat $TMPDIR/got)'"
+    local ACTUAL=$("$@" 2>&1)
+    if ! echo "$ACTUAL" | grep -E -q "$REGEXP"; then
+        echo "Can not find '$REGEXP' in '$ACTUAL'"
         fail
     fi
 }
 
 
-TMPDIR=$(mktemp -d)
-trap "rm -rf $TMPDIR" 0 HUP INT QUIT ILL ABRT FPE SEGV PIPE TERM
 for test in $MYDIR/tests/*_test_*; do
     echo "Running $test"
     . "$test"
