@@ -1,3 +1,3 @@
 snappy self test
 
-run selftest
+run selftest via /apps/snappy-selftest/current/snappy-selftest
