@@ -2,35 +2,15 @@
 
 set -e
 
+. tests/framework
+
 MYDIR=$(dirname $0)
-
-fail() {
-    echo "ERROR"
-    exit 1
-}
-
-test_equal() {
-    local expected="$1"
-    shift
-    "$@" 2>&1 | diff -u <(echo "$expected") -
-}
-
-test_regexp() {
-    local REGEXP="$1"
-    shift
-    local ACTUAL=$("$@" 2>&1)
-    if ! echo "$ACTUAL" | grep -E -q "$REGEXP"; then
-        echo "Can not find '$REGEXP' in '$ACTUAL'"
-        fail
-    fi
-}
-
-
 for test in $MYDIR/tests/*_test_*; do
     echo "Running $test"
     . "$test"
-    if ! test ; then
+    if ! OUTPUT=$(test 2>&1); then
         echo "FAILED: $test"
+        echo "$OUTPUT"
         exit 1
     fi
 done
