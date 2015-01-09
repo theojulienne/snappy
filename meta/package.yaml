@@ -1,0 +1,8 @@
+name: snappy-selftest
+version: 0.1
+vendor: Michael Vogt <mvo@ubuntu.com>
+binaries:
+ - name: snappy-selftest
+integration:
+ snappy-selftest:
+   apparmor: meta/snappy-selftest.apparmor-profile
