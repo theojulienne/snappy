@@ -1,0 +1,20 @@
+Source: ubuntu-core-snappy
+Section: utils
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Build-Depends: debhelper (>= 9),
+               dh-golang,
+               dh-systemd,
+               golang-go,
+               golang-go-flags-dev,
+               golang-gocheck-dev,
+Standards-Version: 3.9.5
+Vcs-Bzr: lp:snappy
+
+Package: ubuntu-core-snappy
+Architecture: all
+Depends: click, system-image-dbus (>= 2.5-0ubuntu1+ppa15), ${misc:Depends}, snappy-systemd, apparmor-easyprof-ubuntu-snappy
+Description: Tool to manage an Ubuntu snappy system
+ snappy is a new Ubuntu environment providing transactional updates to a minimal
+ Ubuntu core system.
+XB-Task: ubuntu-core
