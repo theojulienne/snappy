@@ -101,7 +101,7 @@ const ASSETS_DIR = "assets"
 const FLASH_ASSETS_DIR = "flashtool-assets"
 
 //--------------------------------------------------------------------
-// FIXME: Globals
+// FIXME: Globals - can we avoid having globals?
 
 // list of current mounts that this module has created
 var mounts []string
@@ -130,7 +130,9 @@ type Partition struct {
 	// just root partitions
 	roots []string
 
-	// FIXME: could we make that part of "Mount*" instead
+	// FIXME: could we make this private of "Mount*" instead 
+	//        and return the mount point as part of the
+	//        mountOtherRootfs call?
 	MountTarget string
 
 	hardwareSpecFile string
@@ -413,12 +415,11 @@ func New() *Partition {
 
 func (p *Partition) RunWithOther(f func(otherRoot string) (err error)) (err error) {
 	dual := p.dualRootPartitions()
-	// FIXME: should we simply
+	// FIXME: is this too simplistic? i.e. should we return a error instead?
 	if !dual {
 		return f("/")
 	}
 
-	// FIXME: why is this not a parameter of MountOtherRootfs()?
 	err = p.mountOtherRootfs(true)
 	if err != nil {
 		return err
