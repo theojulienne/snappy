@@ -136,7 +136,10 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 		return err
 	}
 
-	err = s.proxy.DownloadUpdate()
+	err = s.partition.RunWithOther(true, func(o string) (err error) {
+		err = s.proxy.DownloadUpdate()
+		return
+	})
 	if err != nil {
 		return err
 	}
