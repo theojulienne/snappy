@@ -407,7 +407,6 @@ func New() *Partition {
 func (p *Partition) RunWithOther(writable bool, f func(otherRoot string) (err error)) (err error) {
 	dual := p.dualRootPartitions()
 
-	// FIXME: should we simply
 	if !dual {
 		return f("/")
 	}
@@ -718,7 +717,7 @@ func (p *Partition) bindmountRequiredFilesystems() (err error) {
 	return err
 }
 
-// Undo the effects of BindmountRequiredFilesystems()
+// Undo the effects of bindmountRequiredFilesystems()
 func (p *Partition) unmountRequiredFilesystems() (err error) {
 	return undoMounts(bindMounts)
 }

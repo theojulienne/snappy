@@ -286,6 +286,12 @@ func (s *systemImageDBusProxy) ApplyUpdate() (err error) {
 }
 
 func (s *systemImageDBusProxy) DownloadUpdate() (err error) {
+	// Ensure the system-image-dbus daemon is looking at the correct
+	// rootfs's configuration file
+	if err = s.ReloadConfiguration(); err != nil {
+		return err
+	}
+
 	callName := "DownloadUpdate"
 	_, err = s.proxy.Call(systemImageBusName, callName)
 	if err != nil {
@@ -305,10 +311,7 @@ func (s *systemImageDBusProxy) DownloadUpdate() (err error) {
 // Force system-image-dbus daemon to read the other partitions
 // system-image configuration file so that it can calculate the correct
 // upgrade path.
-//
-// If reset is true, force system-image to reload its configuration from
-// the current rootfs, otherwise
-func (s *systemImageDBusProxy) ReloadConfiguration(reset bool) (err error) {
+func (s *systemImageDBusProxy) ReloadConfiguration() (err error) {
 	// Using RunWithOther() is safe since the
 	// system-image-dbus daemon caches its configuration file,
 	// so once the D-Bus call completes, it no longer cares
@@ -333,7 +336,7 @@ func (s *systemImageDBusProxy) CheckForUpdate() (us updateStatus, err error) {
 
 	// Ensure the system-image-dbus daemon is looking at the correct
 	// rootfs's configuration file
-	if err = s.ReloadConfiguration(false); err != nil {
+	if err = s.ReloadConfiguration(); err != nil {
 		return us, err
 	}
 
@@ -358,12 +361,6 @@ func (s *systemImageDBusProxy) CheckForUpdate() (us updateStatus, err error) {
 				"timed out after %d seconds "+
 				"waiting for system image server to respond",
 			systemImageTimeoutSecs))
-	}
-
-	// switch back to using the current rootfs's system-image
-	// configuration.
-	if err = s.ReloadConfiguration(true); err != nil {
-		return us, err
 	}
 
 	return s.us, err
@@ -430,6 +427,17 @@ func (s *SystemImageRepository) otherPart() Part {
 	var part Part
 	s.partition.RunWithOther(false, func(otherRoot string) (err error) {
 		configFile := s.myroot + otherRoot + systemImageChannelConfig
+
+		_, err = os.Stat(configFile)
+		if err != nil {
+			// config file doesn't exist, meaning the other
+			// partition is empty. However, this is not an
+			// error condition (atleast for amd64 images
+			// which only have 1 partition pre-installed).
+			part = nil
+			return nil
+		}
+
 		part, err = s.makePartFromSystemImageConfigFile(configFile, false)
 		if err != nil {
 			log.Printf("Can not make system-image part for %s: %s", configFile, err)
