@@ -174,8 +174,8 @@ func init() {
 func undoMounts(mounts []string) (err error) {
 	// Iterate backwards since we want a reverse-sorted list of
 	// mounts to ensure we can unmount in order.
-	for i := range mounts {
-		if err := unmount(mounts[len(mounts)-i]); err != nil {
+	for i, mount := range mounts {
+		if err := unmount(mount); err != nil {
 			return err
 		}
 	}
@@ -711,6 +711,7 @@ func (p *Partition) bindmountRequiredFilesystems() (err error) {
 		return nil
 	}
 
+	// mount bootloader parititon (really only necessary for grub)
 	target := path.Join(p.MountTarget(), boot.mountpoint)
 	err = bindmount(boot.mountpoint, target)
 	if err != nil {
