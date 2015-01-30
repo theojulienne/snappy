@@ -174,7 +174,7 @@ func init() {
 func undoMounts(mounts []string) (err error) {
 	// Iterate backwards since we want a reverse-sorted list of
 	// mounts to ensure we can unmount in order.
-	for i, mount := range mounts {
+	for _, mount := range mounts {
 		if err := unmount(mount); err != nil {
 			return err
 		}
