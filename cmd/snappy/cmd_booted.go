@@ -9,8 +9,8 @@ var cmdBooted CmdBooted
 
 func init() {
 	Parser.AddCommand("booted",
-		"Flag that rootfs booted successfully",
-		"Not necessary to run this command manually",
+		"Flag that rootfs booted successfully (INTERNAL)",
+		"Do not run this command manually",
 		&cmdBooted)
 }
 

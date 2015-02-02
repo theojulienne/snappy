@@ -36,6 +36,7 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -67,8 +68,11 @@ const DEFAULT_CACHE_DIR = "/writable/cache"
 // diretory.
 const MOUNT_TARGET = "system"
 
-// File creation mode used when any directories are created
+// Default file creation mode used when any directories are created
 const DIR_MODE = 0750
+
+// Mode used for directories that must allow non-priv users access
+const DIR_MODE_PERMISSIVE = 0755
 
 var (
 	BootloaderError = errors.New("Unable to determine bootloader")
@@ -96,6 +100,22 @@ const ASSETS_DIR = "assets"
 // to the disk (such as uBoot, MLO)
 const FLASH_ASSETS_DIR = "flashtool-assets"
 
+// Full path to file containing lsblk(8) output, generated in early
+// boot.
+//
+// lsblk(8) has rather unfortunate semantics - if run as a non-root
+// user, it "works", but returns *incomplete* information. Specfically,
+// the partition label information is missing.
+//
+// Since this information is critical, and since snappy should be
+// runable as a non-root user for query-type operations we now run
+// lsblk(8) as root in early boot, and save the output.
+//
+// As the partition layout is never expected to change on an
+// operational system, this is a reasonable compromise (and avoids
+// set-uid nastiness).
+const lsblkCacheFile = "/run/snappy/lsblk.txt"
+
 //--------------------------------------------------------------------
 // FIXME: Globals
 
@@ -117,6 +137,8 @@ const (
 type PartitionInterface interface {
 	UpdateBootloader() (err error)
 	MarkBootSuccessful() (err error)
+	GenerateLsblkCache() (err error)
+
 	// FIXME: could we make SyncBootloaderFiles part of UpdateBootloader
 	//        to expose even less implementation details?
 	SyncBootloaderFiles() (err error)
@@ -304,11 +326,43 @@ func stringInSlice(slice []string, value string) int {
 }
 
 var runLsblk = func() (output []string, err error) {
-	return runCommandWithStdout(
-		"/bin/lsblk",
-		"--ascii",
-		"--output=NAME,LABEL,PKNAME,MOUNTPOINT",
-		"--pairs")
+	// always run the actual command as root since:
+	//
+	// - Doing so means we can potentially test that the code that
+	//   runs lsblk in early boot gives the same output as the command
+	//   below (by running tests as root and non-root).
+	//
+	// - The system remains upgradeable should the cache file be
+	//   removed inadvertently.
+	if os.Getuid() == 0 {
+		return getLsblkOutput()
+	}
+
+	if !fileExists(lsblkCacheFile) {
+		panic(fmt.Sprintf("ERROR: cannot find lsblk cache %s - " +
+		"re-run as root user",
+		lsblkCacheFile))
+	}
+
+	return readLines(lsblkCacheFile)
+}
+
+func (p *Partition) GenerateLsblkCache() (err error) {
+	var lines []string
+
+	// ensure the directory exists.
+
+	dir := filepath.Dir(lsblkCacheFile)
+	if err = os.MkdirAll(dir, DIR_MODE_PERMISSIVE); err != nil {
+		return err
+	}
+
+	lines, err = getLsblkOutput()
+	if err != nil {
+		return err
+	}
+
+	return writeLines(lines, lsblkCacheFile)
 }
 
 // Determine details of the recognised disk partitions

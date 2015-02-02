@@ -121,9 +121,13 @@ func (s *SystemImagePart) Config(configuration []byte) (err error) {
 // Mark the *currently* booted rootfs as "good" (it booted :)
 // Note: Not part of the Part interface.
 func (s *SystemImagePart) MarkBootSuccessful() (err error) {
-
 	return s.partition.MarkBootSuccessful()
 }
+
+func (s *SystemImagePart) GenerateLsblkCache() (err error) {
+	return s.partition.GenerateLsblkCache()
+}
+
 func (s *SystemImagePart) Channel() string {
 
 	return s.channelName

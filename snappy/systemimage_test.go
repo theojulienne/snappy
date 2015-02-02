@@ -293,6 +293,11 @@ func (p *MockPartition) MarkBootSuccessful() (err error) {
 	p.markBootSuccessfulCalled = true
 	return nil
 }
+
+func (p *MockPartition) GenerateLsblkCache() (err error) {
+	return err
+}
+
 func (p *MockPartition) SyncBootloaderFiles() (err error) {
 	p.syncBootloaderFilesCalled = true
 	return nil
