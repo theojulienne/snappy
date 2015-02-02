@@ -34,6 +34,8 @@ bootloader: uboot
 }
 
 func (s *PartitionTestSuite) TestHardwareSpec(c *C) {
+	runLsblk = mockRunLsblkDualSnappy
+
 	p := New()
 	c.Assert(p, NotNil)
 
