@@ -114,6 +114,8 @@ const (
 	RW
 )
 
+var NoDualPartitionError = errors.New("No dual partition")
+
 type PartitionInterface interface {
 	UpdateBootloader() (err error)
 	MarkBootSuccessful() (err error)
@@ -420,7 +422,7 @@ func (p *Partition) RunWithOther(option MountOption, f func(otherRoot string) (e
 	dual := p.DualRootPartitions()
 
 	if !dual {
-		return errors.New("ERROR: No other partition")
+		return NoDualPartitionError
 	}
 
 	if option == RW {
