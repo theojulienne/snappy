@@ -5,7 +5,6 @@
 package partition
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path"
@@ -170,46 +169,6 @@ func (u *Uboot) GetRootFSName() string {
 
 func (u *Uboot) GetOtherRootFSName() string {
 	return u.otherRootfs
-}
-
-// FIXME: put into utils package
-func readLines(path string) (lines []string, err error) {
-
-	file, err := os.Open(path)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	return lines, scanner.Err()
-}
-
-// FIXME: put into utils package
-func writeLines(lines []string, path string) (err error) {
-
-	file, err := os.Create(path)
-
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
-	for _, line := range lines {
-		if _, err = fmt.Fprintln(writer, line); err != nil {
-			return err
-		}
-	}
-	return writer.Flush()
 }
 
 // Returns name=value entries from the specified file, removing all
@@ -379,68 +338,3 @@ func (u *Uboot) HandleAssets() (err error) {
 	return err
 }
 
-// Write lines to file atomically. File does not have to preexist.
-// FIXME: put into utils package
-func atomicFileUpdate(file string, lines []string) (err error) {
-	tmpFile := fmt.Sprintf("%s.NEW", file)
-
-	if err := writeLines(lines, tmpFile); err != nil {
-		return err
-	}
-
-	// atomic update
-	if err = os.Rename(tmpFile, file); err != nil {
-		return err
-	}
-
-	return err
-}
-
-// Rewrite the specified file, applying the specified set of changes.
-// Lines not in the changes slice are left alone.
-// If the original file does not contain any of the name entries (from
-// the corresponding ConfigFileChange objects), those entries are
-// appended to the file.
-//
-// FIXME: put into utils package
-func modifyNameValueFile(file string, changes []ConfigFileChange) (err error) {
-	var lines []string
-	var updated []ConfigFileChange
-
-	if lines, err = readLines(file); err != nil {
-		return err
-	}
-
-	var new []string
-
-	for _, line := range lines {
-		for _, change := range changes {
-			if strings.HasPrefix(line, fmt.Sprintf("%s=", change.Name)) {
-				line = fmt.Sprintf("%s=%s", change.Name, change.Value)
-				updated = append(updated, change)
-			}
-		}
-		new = append(new, line)
-	}
-
-	lines = new
-
-	for _, change := range changes {
-		var got bool = false
-		for _, update := range updated {
-			if update.Name == change.Name {
-				got = true
-				break
-			}
-		}
-
-		if got == false {
-			// name/value pair did not exist in original
-			// file, so append
-			lines = append(lines, fmt.Sprintf("%s=%s",
-				change.Name, change.Value))
-		}
-	}
-
-	return atomicFileUpdate(file, lines)
-}
