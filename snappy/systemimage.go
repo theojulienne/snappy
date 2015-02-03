@@ -472,8 +472,24 @@ func (s *SystemImageRepository) currentPart() Part {
 // Returns the part associated with the other rootfs (if any)
 func (s *SystemImageRepository) otherPart() Part {
 	var part Part
+
+	if s.partition.DualRootPartitions() != true {
+		return part
+	}
+
 	s.partition.RunWithOther(partition.RO, func(otherRoot string) (err error) {
 		configFile := filepath.Join(s.myroot, otherRoot, systemImageChannelConfig)
+
+		_, err = os.Stat(configFile)
+		if err != nil {
+			// config file doesn't exist, meaning the other
+			// partition is empty. However, this is not an
+			// error condition (atleast for amd64 images
+			// which only have 1 partition pre-installed).
+			part = nil
+			return nil
+		}
+
 		part, err = s.makePartFromSystemImageConfigFile(configFile, false)
 		if err != nil {
 			log.Printf("Can not make system-image part for %s: %s", configFile, err)

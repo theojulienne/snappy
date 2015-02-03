@@ -69,8 +69,8 @@ func (s *PartitionTestSuite) TestSnappyDualRoot(c *C) {
 	runLsblk = mockRunLsblkDualSnappy
 
 	p := New()
-	c.Assert(p.dualRootPartitions(), Equals, true)
-	c.Assert(p.singleRootPartition(), Equals, false)
+	c.Assert(p.DualRootPartitions(), Equals, true)
+	c.Assert(p.SingleRootPartition(), Equals, false)
 
 	rootPartitions := p.rootPartitions()
 	c.Assert(rootPartitions[0].name, Equals, "system-a")
@@ -103,14 +103,17 @@ func (s *PartitionTestSuite) TestSnappyDualRoot(c *C) {
 
 func (s *PartitionTestSuite) TestRunWithOtherDualParitionRO(c *C) {
 	runLsblk = mockRunLsblkDualSnappy
-	doRunWithOtherTest(c, (&Partition{}).MountTarget())
+	doRunWithDualOtherTest(c, (&Partition{}).MountTarget())
 }
 
 func (s *PartitionTestSuite) TestRunWithOtherSingleParitionRO(c *C) {
 	runLsblk = mockRunLsblkSingleRootSnappy
-	doRunWithOtherTest(c, "/")
+	// null string since attempting to RunWithOther() when there is
+	// only a single rootfs is now an error.
+	doRunWithSingleOtherTest(c, "")
 }
-func doRunWithOtherTest(c *C, expectedRoot string) {
+
+func doRunWithDualOtherTest(c *C, expectedRoot string) {
 	p := New()
 	reportedRoot := ""
 	err := p.RunWithOther(RO, func(otherRoot string) (err error) {
@@ -118,6 +121,17 @@ func doRunWithOtherTest(c *C, expectedRoot string) {
 		return nil
 	})
 	c.Assert(err, IsNil)
+	c.Assert(reportedRoot, Equals, expectedRoot)
+}
+
+func doRunWithSingleOtherTest(c *C, expectedRoot string) {
+	p := New()
+	reportedRoot := ""
+	err := p.RunWithOther(RO, func(otherRoot string) (err error) {
+		reportedRoot = otherRoot
+		return nil
+	})
+	c.Assert(err, NotNil)
 	c.Assert(reportedRoot, Equals, expectedRoot)
 }
 
@@ -135,8 +149,8 @@ func (s *PartitionTestSuite) TestSnappySingleRoot(c *C) {
 	runLsblk = mockRunLsblkSingleRootSnappy
 
 	p := New()
-	c.Assert(p.dualRootPartitions(), Equals, false)
-	c.Assert(p.singleRootPartition(), Equals, true)
+	c.Assert(p.DualRootPartitions(), Equals, false)
+	c.Assert(p.SingleRootPartition(), Equals, true)
 
 	root := p.rootPartition()
 	c.Assert(root.name, Equals, "system-a")

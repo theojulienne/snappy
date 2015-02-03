@@ -122,6 +122,13 @@ type PartitionInterface interface {
 	SyncBootloaderFiles() (err error)
 	NextBootIsOther() bool
 
+	// Returns true if system has 2 root filesystems (even if only
+	// one is provisioned), else false.
+	DualRootPartitions() bool
+
+	// Returns true if system has only 1 root filesystem.
+	SingleRootPartition() bool
+
 	// run the function f with the otherRoot mounted
 	RunWithOther(rw MountOption, f func(otherRoot string) (err error)) (err error)
 }
@@ -410,11 +417,10 @@ func New() *Partition {
 // /proc, /sys and /dev will also be bind-mounted at the time the
 // specified function is called.
 func (p *Partition) RunWithOther(option MountOption, f func(otherRoot string) (err error)) (err error) {
-	dual := p.dualRootPartitions()
+	dual := p.DualRootPartitions()
 
-	// FIXME: should we simply
 	if !dual {
-		return f("/")
+		return errors.New("ERROR: No other partition")
 	}
 
 	if option == RW {
@@ -447,7 +453,7 @@ func (p *Partition) SyncBootloaderFiles() (err error) {
 }
 
 func (p *Partition) UpdateBootloader() (err error) {
-	if p.dualRootPartitions() {
+	if p.DualRootPartitions() {
 		return p.toggleBootloaderRootfs()
 	}
 	return err
@@ -548,11 +554,11 @@ func (p *Partition) getPartitionDetails() (err error) {
 		return err
 	}
 
-	if !p.dualRootPartitions() && !p.singleRootPartition() {
+	if !p.DualRootPartitions() && !p.SingleRootPartition() {
 		return PartitionDetectionError
 	}
 
-	if p.dualRootPartitions() {
+	if p.DualRootPartitions() {
 		// XXX: this will soon be handled automatically at boot by
 		// initramfs-tools-ubuntu-core.
 		return p.ensureOtherMountedRO()
@@ -575,13 +581,13 @@ func (p *Partition) rootPartitions() (roots []blockDevice) {
 
 // Return true if system has dual root partitions configured in the
 // expected manner for a snappy system.
-func (p *Partition) dualRootPartitions() bool {
+func (p *Partition) DualRootPartitions() bool {
 	return len(p.rootPartitions()) == 2
 }
 
 // Return true if system has a single root partition configured in the
 // expected manner for a snappy system.
-func (p *Partition) singleRootPartition() bool {
+func (p *Partition) SingleRootPartition() bool {
 	return len(p.rootPartitions()) == 1
 }
 
@@ -751,7 +757,7 @@ func (p *Partition) handleBootloader() (err error) {
 
 func (p *Partition) toggleBootloaderRootfs() (err error) {
 
-	if p.dualRootPartitions() != true {
+	if p.DualRootPartitions() != true {
 		return errors.New("System is not dual root")
 	}
 

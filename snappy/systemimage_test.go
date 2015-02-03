@@ -325,6 +325,14 @@ func (p *MockPartition) NextBootIsOther() bool {
 	return false
 }
 
+func (p *MockPartition) DualRootPartitions() bool {
+	return true
+}
+
+func (p *MockPartition) SingleRootPartition() bool {
+	return true
+}
+
 func (p *MockPartition) RunWithOther(option partition.MountOption, f func(otherRoot string) (err error)) (err error) {
 	return f("/other")
 }
