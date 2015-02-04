@@ -311,6 +311,8 @@ func (s *systemImageDBusProxy) makeWatcher(signalName string) (sensibleWatch *Se
 		for msg := range watch.C {
 			sensibleWatch.C <- msg
 		}
+		// at this point watch.C is closed, so we can close
+		// sensibleWatch.C as well
 		close(sensibleWatch.C)
 	}()
 
