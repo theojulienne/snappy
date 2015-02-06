@@ -21,7 +21,7 @@ Vcs-Browser: http://bazaar.launchpad.net/~snappy-dev/snappy/trunk/files
 Vcs-Bzr: lp:snappy
 
 Package: ubuntu-snappy
-Architecture: any
+Architecture: i386 amd64 armhf
 Depends: apparmor-easyprof-ubuntu-snappy,
          debsig-verify,
          snappy-systemd,
