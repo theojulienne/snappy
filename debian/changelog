@@ -1,3 +1,9 @@
+ubuntu-snappy (0.1-0ubuntu2) UNRELEASED; urgency=medium
+
+  * debian/control: adding missing build dependency, ubuntu-core-snappy.
+
+ -- Sergio Schvezov <sergio.schvezov@canonical.com>  Fri, 06 Feb 2015 11:22:47 -0200
+
 ubuntu-snappy (0.1-0ubuntu1) vivid; urgency=medium 
 
   * Initial packaging
