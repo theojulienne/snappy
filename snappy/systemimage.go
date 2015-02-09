@@ -93,6 +93,7 @@ func (s *SystemImagePart) DownloadSize() int {
 }
 
 func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
+
 	var updateProgress *SensibleWatch
 	if pb != nil {
 		updateProgress, err = s.proxy.makeWatcher("UpdateProgress")
@@ -125,10 +126,17 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 		return err
 	}
 
+	// Display details of the current system and the planned upgrade
+	// before the upgrade is actually started.
+	s.showUpgradeDetails()
+
 	err = s.proxy.DownloadUpdate()
 	if err != nil {
 		return err
 	}
+
+	// Check that the final system state is as expected.
+	s.checkUpgrade()
 
 	// FIXME: switch s-i daemon back to current partition
 	err = s.partition.UpdateBootloader()
@@ -137,7 +145,74 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 		pb.Finished()
 		updateProgress.Cancel()
 	}
+
 	return err
+}
+
+// Show upgrade details if SNAPPY_DEBUG environment variable set
+func (s *SystemImagePart) showUpgradeDetails() {
+	if os.Getenv("SNAPPY_DEBUG") == "" {
+		return
+	}
+
+	// The object we're being called from represents the *future*
+	// part we're about to install. Since we wish to compare current
+	// with new, query the existing part too.
+	repo := NewSystemImageRepository()
+
+	currentPart := repo.currentPart()
+	otherPart := repo.otherPart()
+
+	fmt.Printf("current rootfs image:\n")
+	fmt.Printf("    name       : %q\n", currentPart.Name())
+	fmt.Printf("    version    : %q\n", currentPart.Version())
+	fmt.Printf("    installed  : %t\n", currentPart.IsInstalled())
+	fmt.Printf("    active     : %t\n", currentPart.IsActive())
+
+	if otherPart != nil {
+		fmt.Printf("other rootfs image:\n")
+		fmt.Printf("    name       : %q\n", otherPart.Name())
+		fmt.Printf("    version    : %q\n", otherPart.Version())
+		fmt.Printf("    installed  : %t\n", otherPart.IsInstalled())
+		fmt.Printf("    active     : %t\n", otherPart.IsActive())
+	} else {
+		fmt.Printf("other rootfs image: none\n")
+	}
+
+	fmt.Printf("upgrade target:\n")
+	fmt.Printf("    version    : %q\n", s.version)
+	fmt.Printf("    details    : %q\n", s.versionDetails)
+	fmt.Printf("    channel    : %q\n", s.channelName)
+	fmt.Printf("    installed  : %t\n", s.isInstalled)
+	fmt.Printf("    active     : %t\n", s.isActive)
+}
+
+// Ensure the expected version update was applied to the expected partition.
+func (s *SystemImagePart) checkUpgrade() {
+	// The upgrade has now been applied, so check that the expected
+	// update was applied by comparing "self" (which is the newest
+	// system-image revision with that installed on the other
+	// partition.
+
+	repo := NewSystemImageRepository()
+
+	// Determine the latest installed part.
+	latestPart := repo.otherPart()
+	if latestPart == nil {
+		// If there is no other part, this system must be a
+		// single rootfs one, so re-query current to find the
+		// latest installed part.
+		latestPart = repo.currentPart()
+	}
+
+	if latestPart == nil {
+		panic("ERROR: could not find latest installed partition")
+	}
+
+	if s.version != latestPart.Version() {
+		panic(fmt.Sprintf("ERROR: found latest installed version %q (expected %q)",
+		latestPart.Version(), s.version))
+	}
 }
 
 func (s *SystemImagePart) Uninstall() (err error) {
@@ -330,6 +405,7 @@ func (s *systemImageDBusProxy) ApplyUpdate() (err error) {
 		return errors.New("updateFailed")
 		break
 	}
+
 	return nil
 }
 
