@@ -579,7 +579,7 @@ func (p *Partition) NextBootIsOther() bool {
 		return false
 	}
 
-	if label == bootloader.GetOtherRootFSName() {
+	if label == bootloader.GetOtherRootFSLabel() {
 		return true
 	}
 

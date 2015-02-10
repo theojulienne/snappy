@@ -145,6 +145,14 @@ func (g *Grub) GetOtherRootFSName() string {
 	return g.otherRootfs
 }
 
+func (g *Grub) GetRootFSLabel() string {
+	return g.currentLabel
+}
+
+func (g *Grub) GetOtherRootFSLabel() string {
+	return g.otherLabel
+}
+
 func (g *Grub) MarkCurrentBootSuccessful() (err error) {
 	return g.SetBootVar(BOOTLOADER_BOOTMODE_VAR,
 		BOOTLOADER_BOOTMODE_VAR_END_VALUE)

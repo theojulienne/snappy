@@ -61,6 +61,10 @@ type BootLoader interface {
 	// other rootfs.
 	GetOtherRootFSName() string
 
+	// Return the partition label corresponding to the
+	// other rootfs.
+	GetOtherRootFSLabel() string
+
 	// Return the 1-character name corresponding to the
 	// rootfs that will be used on _next_ boot.
 	//
