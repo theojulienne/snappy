@@ -145,15 +145,7 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 		}()
 	}
 
-	// Ensure there is always a kernel + initrd to boot with, even
-	// if the update does not provide new versions.
-	err = s.partition.SyncBootloaderFiles()
-	if err != nil {
-		return err
-	}
-
-	err = s.proxy.DownloadUpdate()
-	if err != nil {
+	if err := s.proxy.DownloadUpdate(); err != nil {
 		return err
 	}
 

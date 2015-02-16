@@ -126,11 +126,8 @@ const (
 // Interface provides the interface to interact with a partition
 type Interface interface {
 	ToggleNextBoot() (err error)
-
 	MarkBootSuccessful() (err error)
-	// FIXME: could we make SyncBootloaderFiles part of ToogleBootloader
-	//        to expose even less implementation details?
-	SyncBootloaderFiles() (err error)
+
 	IsNextBootOther() bool
 
 	// run the function f with the otherRoot mounted
@@ -460,22 +457,12 @@ func (p *Partition) RunWithOther(option MountOption, f func(otherRoot string) (e
 	return err
 }
 
-// SyncBootloaderFiles syncs the bootloader files
-// FIXME: can we unexport this?
-func (p *Partition) SyncBootloaderFiles() (err error) {
-	bootloader, err := getBootloader(p)
-	if err != nil {
-		return err
-	}
-	return bootloader.SyncBootFiles()
-}
-
 // ToggleNextBoot toggles the roofs that should be used on the next boot
 func (p *Partition) ToggleNextBoot() (err error) {
 	if p.dualRootPartitions() {
 		return p.toggleBootloaderRootfs()
 	}
-	return err
+	return nil
 }
 
 // MarkBootSuccessful marks the boot as successful
@@ -720,11 +707,17 @@ func (p *Partition) unmountRequiredFilesystems() (err error) {
 func (p *Partition) toggleBootloaderRootfs() (err error) {
 
 	if !p.dualRootPartitions() {
-		return errors.New("System is not dual root")
+		return ErrNoDualPartition
 	}
 
 	bootloader, err := getBootloader(p)
 	if err != nil {
+		return err
+	}
+
+	// Ensure there is always a kernel + initrd to boot with, even
+	// if the update does not provide new versions.
+	if err := bootloader.SyncBootFiles(); err != nil {
 		return err
 	}
 

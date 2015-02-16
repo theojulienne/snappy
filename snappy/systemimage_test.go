@@ -315,9 +315,8 @@ func (s *SITestSuite) TestUpdateHasUpdate(c *C) {
 }
 
 type MockPartition struct {
-	toggleNextBootCalled      bool
-	markBootSuccessfulCalled  bool
-	syncBootloaderFilesCalled bool
+	toggleNextBootCalled     bool
+	markBootSuccessfulCalled bool
 }
 
 func (p *MockPartition) ToggleNextBoot() (err error) {
@@ -327,10 +326,6 @@ func (p *MockPartition) ToggleNextBoot() (err error) {
 
 func (p *MockPartition) MarkBootSuccessful() (err error) {
 	p.markBootSuccessfulCalled = true
-	return nil
-}
-func (p *MockPartition) SyncBootloaderFiles() (err error) {
-	p.syncBootloaderFilesCalled = true
 	return nil
 }
 func (p *MockPartition) IsNextBootOther() bool {
