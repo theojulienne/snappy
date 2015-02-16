@@ -47,7 +47,7 @@ func info() error {
 	release := "unknown"
 	parts, err := snappy.InstalledSnapsByType(snappy.SnapTypeCore)
 	if len(parts) == 1 && err == nil {
-		release = parts[0].(*snappy.SystemImagePart).Channel()
+		release = parts[0].Channel()
 	}
 
 	frameworks, _ := snappy.InstalledSnapNamesByType(snappy.SnapTypeFramework)

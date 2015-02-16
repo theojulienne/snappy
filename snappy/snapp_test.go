@@ -70,7 +70,7 @@ func makeSnapActive(packageYamlPath string) (err error) {
 }
 
 func (s *SnapTestSuite) TestLocalSnapInvalidPath(c *C) {
-	snap := NewInstalledSnapPart("invalid-path")
+	snap := newInstalledSnapPart("invalid-path")
 	c.Assert(snap, IsNil)
 }
 
@@ -78,7 +78,7 @@ func (s *SnapTestSuite) TestLocalSnapSimple(c *C) {
 	snapYaml, err := s.makeMockSnap()
 	c.Assert(err, IsNil)
 
-	snap := NewInstalledSnapPart(snapYaml)
+	snap := newInstalledSnapPart(snapYaml)
 	c.Assert(snap, NotNil)
 	c.Assert(snap.Name(), Equals, "hello-app")
 	c.Assert(snap.Version(), Equals, "1.10")
@@ -92,12 +92,12 @@ func (s *SnapTestSuite) TestLocalSnapActive(c *C) {
 	c.Assert(err, IsNil)
 	makeSnapActive(snapYaml)
 
-	snap := NewInstalledSnapPart(snapYaml)
+	snap := newInstalledSnapPart(snapYaml)
 	c.Assert(snap.IsActive(), Equals, true)
 }
 
 func (s *SnapTestSuite) TestLocalSnapRepositoryInvalid(c *C) {
-	snap := NewLocalSnapRepository("invalid-path")
+	snap := newLocalSnapRepository("invalid-path")
 	c.Assert(snap, IsNil)
 }
 
@@ -107,7 +107,7 @@ func (s *SnapTestSuite) TestLocalSnapRepositorySimple(c *C) {
 	err = makeSnapActive(yamlPath)
 	c.Assert(err, IsNil)
 
-	snap := NewLocalSnapRepository(filepath.Join(s.tempdir, "apps"))
+	snap := newLocalSnapRepository(filepath.Join(s.tempdir, "apps"))
 	c.Assert(snap, NotNil)
 
 	installed, err := snap.Installed()
@@ -261,7 +261,7 @@ func (s *SnapTestSuite) TestUbuntuStoreRepositorySearch(c *C) {
 	c.Assert(mockServer, NotNil)
 	defer mockServer.Close()
 
-	snap := NewUbuntuStoreSnapRepository()
+	snap := newUbuntuStoreSnapRepository()
 	c.Assert(snap, NotNil)
 	snap.searchURI = mockServer.URL + "/%s"
 
@@ -294,7 +294,7 @@ func (s *SnapTestSuite) TestUbuntuStoreRepositoryUpdates(c *C) {
 	c.Assert(mockServer, NotNil)
 	defer mockServer.Close()
 
-	snap := NewUbuntuStoreSnapRepository()
+	snap := newUbuntuStoreSnapRepository()
 	c.Assert(snap, NotNil)
 	snap.bulkURI = mockServer.URL + "/updates/"
 
@@ -313,7 +313,7 @@ func (s *SnapTestSuite) TestUbuntuStoreRepositoryUpdates(c *C) {
 
 func (s *SnapTestSuite) TestUbuntuStoreRepositoryUpdatesNoSnaps(c *C) {
 
-	snap := NewUbuntuStoreSnapRepository()
+	snap := newUbuntuStoreSnapRepository()
 	c.Assert(snap, NotNil)
 
 	// ensure we do not hit the net if there is nothing installed
@@ -337,7 +337,7 @@ func (s *SnapTestSuite) TestUbuntuStoreRepositoryDetails(c *C) {
 	c.Assert(mockServer, NotNil)
 	defer mockServer.Close()
 
-	snap := NewUbuntuStoreSnapRepository()
+	snap := newUbuntuStoreSnapRepository()
 	c.Assert(snap, NotNil)
 	snap.detailsURI = mockServer.URL + "/details/%s"
 
@@ -359,7 +359,7 @@ func (s *SnapTestSuite) TestUbuntuStoreRepositoryNoDetails(c *C) {
 	c.Assert(mockServer, NotNil)
 	defer mockServer.Close()
 
-	snap := NewUbuntuStoreSnapRepository()
+	snap := newUbuntuStoreSnapRepository()
 	c.Assert(snap, NotNil)
 	snap.detailsURI = mockServer.URL + "/details/%s"
 

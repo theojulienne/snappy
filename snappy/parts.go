@@ -28,6 +28,7 @@ type Part interface {
 	Description() string
 
 	Hash() string
+	Channel() string
 	IsActive() bool
 	IsInstalled() bool
 	// Will become active on the next reboot
@@ -74,16 +75,16 @@ func NewMetaRepository() *MetaRepository {
 	m := new(MetaRepository)
 	m.all = []Repository{}
 	// its ok if repos fail if e.g. no dbus is available
-	if repo := NewSystemImageRepository(); repo != nil {
+	if repo := newSystemImageRepository(); repo != nil {
 		m.all = append(m.all, repo)
 	}
-	if repo := NewUbuntuStoreSnapRepository(); repo != nil {
+	if repo := newUbuntuStoreSnapRepository(); repo != nil {
 		m.all = append(m.all, repo)
 	}
-	if repo := NewLocalSnapRepository(snapAppsDir); repo != nil {
+	if repo := newLocalSnapRepository(snapAppsDir); repo != nil {
 		m.all = append(m.all, repo)
 	}
-	if repo := NewLocalSnapRepository(snapOemDir); repo != nil {
+	if repo := newLocalSnapRepository(snapOemDir); repo != nil {
 		m.all = append(m.all, repo)
 	}
 

@@ -16,8 +16,8 @@ import (
 	yaml "launchpad.net/goyaml"
 )
 
-// SnapPart represents a generic snap type
-type SnapPart struct {
+// snapPart represents a generic snap type
+type snapPart struct {
 	name        string
 	version     string
 	description string
@@ -57,9 +57,9 @@ type searchResults struct {
 	} `json:"_embedded"`
 }
 
-// NewInstalledSnapPart returns a new SnapPart from the given yamlPath
-func NewInstalledSnapPart(yamlPath string) *SnapPart {
-	part := SnapPart{}
+// NewInstalledSnapPart returns a new snapPart from the given yamlPath
+func newInstalledSnapPart(yamlPath string) *snapPart {
+	part := snapPart{}
 
 	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
 		return nil
@@ -99,8 +99,8 @@ func NewInstalledSnapPart(yamlPath string) *SnapPart {
 	return &part
 }
 
-// Type returns the type of the SnapPart (app, oem, ...)
-func (s *SnapPart) Type() SnapType {
+// Type returns the type of the snapPart (app, oem, ...)
+func (s *snapPart) Type() SnapType {
 	if s.stype != "" {
 		return s.stype
 	}
@@ -109,107 +109,113 @@ func (s *SnapPart) Type() SnapType {
 }
 
 // Name returns the name
-func (s *SnapPart) Name() string {
+func (s *snapPart) Name() string {
 	return s.name
 }
 
 // Version returns the version
-func (s *SnapPart) Version() string {
+func (s *snapPart) Version() string {
 	return s.version
 }
 
 // Description returns the description
-func (s *SnapPart) Description() string {
+func (s *snapPart) Description() string {
 	return s.description
 }
 
+// Channel returns the channel
+func (s *snapPart) Channel() string {
+	// FIXME: hardcoded
+	return "edge"
+}
+
 // Hash returns the hash
-func (s *SnapPart) Hash() string {
+func (s *snapPart) Hash() string {
 	return s.hash
 }
 
 // IsActive returns true if the snap is active
-func (s *SnapPart) IsActive() bool {
+func (s *snapPart) IsActive() bool {
 	return s.isActive
 }
 
 // IsInstalled returns true if the snap is installed
-func (s *SnapPart) IsInstalled() bool {
+func (s *snapPart) IsInstalled() bool {
 	return s.isInstalled
 }
 
 // InstalledSize returns the size of the installed snap
-func (s *SnapPart) InstalledSize() int {
+func (s *snapPart) InstalledSize() int {
 	return -1
 }
 
 // DownloadSize returns the dowload size
-func (s *SnapPart) DownloadSize() int {
+func (s *snapPart) DownloadSize() int {
 	return -1
 }
 
 // Install installs the snap
-func (s *SnapPart) Install(pb ProgressMeter) (err error) {
+func (s *snapPart) Install(pb ProgressMeter) (err error) {
 	return errors.New("Install of a local part is not possible")
 }
 
 // SetActive sets the snap active
-func (s *SnapPart) SetActive() (err error) {
+func (s *snapPart) SetActive() (err error) {
 	return setActiveClick(s.basedir)
 }
 
 // Uninstall remove the snap from the system
-func (s *SnapPart) Uninstall() (err error) {
+func (s *snapPart) Uninstall() (err error) {
 	err = removeClick(s.basedir)
 	return err
 }
 
 // Config is used to to configure the snap
-func (s *SnapPart) Config(configuration []byte) (err error) {
+func (s *snapPart) Config(configuration []byte) (err error) {
 	return err
 }
 
 // NeedsReboot returns true if the snap becomes active on the next reboot
-func (s *SnapPart) NeedsReboot() bool {
+func (s *snapPart) NeedsReboot() bool {
 	return false
 }
 
 // SnapLocalRepository is the type for a local snap repository
-type SnapLocalRepository struct {
+type snapLocalRepository struct {
 	path string
 }
 
-// NewLocalSnapRepository returns a new SnapLocalRepository for the given
+// newLocalSnapRepository returns a new snapLocalRepository for the given
 // path
-func NewLocalSnapRepository(path string) *SnapLocalRepository {
+func newLocalSnapRepository(path string) *snapLocalRepository {
 	if s, err := os.Stat(path); err != nil || !s.IsDir() {
 		return nil
 	}
-	return &SnapLocalRepository{path: path}
+	return &snapLocalRepository{path: path}
 }
 
 // Description describes the local repository
-func (s *SnapLocalRepository) Description() string {
+func (s *snapLocalRepository) Description() string {
 	return fmt.Sprintf("Snap local repository for %s", s.path)
 }
 
 // Search searches the local repository
-func (s *SnapLocalRepository) Search(terms string) (versions []Part, err error) {
+func (s *snapLocalRepository) Search(terms string) (versions []Part, err error) {
 	return versions, err
 }
 
 // Details returns details for the given snap
-func (s *SnapLocalRepository) Details(terms string) (versions []Part, err error) {
+func (s *snapLocalRepository) Details(terms string) (versions []Part, err error) {
 	return versions, err
 }
 
 // Updates returns the available updates
-func (s *SnapLocalRepository) Updates() (parts []Part, err error) {
+func (s *snapLocalRepository) Updates() (parts []Part, err error) {
 	return parts, err
 }
 
 // Installed returns the installed snaps from this repository
-func (s *SnapLocalRepository) Installed() (parts []Part, err error) {
+func (s *snapLocalRepository) Installed() (parts []Part, err error) {
 	globExpr := filepath.Join(s.path, "*", "*", "meta", "package.yaml")
 	matches, err := filepath.Glob(globExpr)
 	if err != nil {
@@ -226,7 +232,7 @@ func (s *SnapLocalRepository) Installed() (parts []Part, err error) {
 			continue
 		}
 
-		snap := NewInstalledSnapPart(yamlfile)
+		snap := newInstalledSnapPart(yamlfile)
 		if snap != nil {
 			parts = append(parts, snap)
 		}
@@ -235,59 +241,65 @@ func (s *SnapLocalRepository) Installed() (parts []Part, err error) {
 	return parts, err
 }
 
-// RemoteSnapPart represents a snap available on the server
-type RemoteSnapPart struct {
+// remoteSnapPart represents a snap available on the server
+type remoteSnapPart struct {
 	pkg remoteSnap
 }
 
-// Type returns the type of the SnapPart (app, oem, ...)
-func (s *RemoteSnapPart) Type() SnapType {
+// Type returns the type of the snapPart (app, oem, ...)
+func (s *remoteSnapPart) Type() SnapType {
 	// FIXME: the store does not publish this info
 	return SnapTypeApp
 }
 
 // Name returns the name
-func (s *RemoteSnapPart) Name() string {
+func (s *remoteSnapPart) Name() string {
 	return s.pkg.Name
 }
 
 // Version returns the version
-func (s *RemoteSnapPart) Version() string {
+func (s *remoteSnapPart) Version() string {
 	return s.pkg.Version
 }
 
 // Description returns the description
-func (s *RemoteSnapPart) Description() string {
+func (s *remoteSnapPart) Description() string {
 	return s.pkg.Title
 }
 
+// Channel returns the channel
+func (s *remoteSnapPart) Channel() string {
+	// FIXME: hardcoded
+	return "edge"
+}
+
 // Hash returns the hash
-func (s *RemoteSnapPart) Hash() string {
+func (s *remoteSnapPart) Hash() string {
 	return "FIXME"
 }
 
 // IsActive returns true if the snap is active
-func (s *RemoteSnapPart) IsActive() bool {
+func (s *remoteSnapPart) IsActive() bool {
 	return false
 }
 
 // IsInstalled returns true if the snap is installed
-func (s *RemoteSnapPart) IsInstalled() bool {
+func (s *remoteSnapPart) IsInstalled() bool {
 	return false
 }
 
 // InstalledSize returns the size of the installed snap
-func (s *RemoteSnapPart) InstalledSize() int {
+func (s *remoteSnapPart) InstalledSize() int {
 	return -1
 }
 
 // DownloadSize returns the dowload size
-func (s *RemoteSnapPart) DownloadSize() int {
+func (s *remoteSnapPart) DownloadSize() int {
 	return -1
 }
 
 // Install installs the snap
-func (s *RemoteSnapPart) Install(pbar ProgressMeter) (err error) {
+func (s *remoteSnapPart) Install(pbar ProgressMeter) (err error) {
 	w, err := ioutil.TempFile("", s.pkg.Name)
 	if err != nil {
 		return err
@@ -325,53 +337,53 @@ func (s *RemoteSnapPart) Install(pbar ProgressMeter) (err error) {
 }
 
 // SetActive sets the snap active
-func (s *RemoteSnapPart) SetActive() (err error) {
+func (s *remoteSnapPart) SetActive() (err error) {
 	return errors.New("A remote part must be installed first")
 }
 
 // Uninstall remove the snap from the system
-func (s *RemoteSnapPart) Uninstall() (err error) {
+func (s *remoteSnapPart) Uninstall() (err error) {
 	return errors.New("Uninstall of a remote part is not possible")
 }
 
 // Config is used to to configure the snap
-func (s *RemoteSnapPart) Config(configuration []byte) (err error) {
+func (s *remoteSnapPart) Config(configuration []byte) (err error) {
 	return err
 }
 
 // NeedsReboot returns true if the snap becomes active on the next reboot
-func (s *RemoteSnapPart) NeedsReboot() bool {
+func (s *remoteSnapPart) NeedsReboot() bool {
 	return false
 }
 
-// NewRemoteSnapPart returns a new RemoteSnapPart from the given
+// newRemoteSnapPart returns a new remoteSnapPart from the given
 // remoteSnap data
-func NewRemoteSnapPart(data remoteSnap) *RemoteSnapPart {
-	return &RemoteSnapPart{pkg: data}
+func newRemoteSnapPart(data remoteSnap) *remoteSnapPart {
+	return &remoteSnapPart{pkg: data}
 }
 
-// SnapUbuntuStoreRepository represents the ubuntu snap store
-type SnapUbuntuStoreRepository struct {
+// snapUbuntuStoreRepository represents the ubuntu snap store
+type snapUbuntuStoreRepository struct {
 	searchURI  string
 	detailsURI string
 	bulkURI    string
 }
 
-// NewUbuntuStoreSnapRepository creates a new SnapUbuntuStoreRepository
-func NewUbuntuStoreSnapRepository() *SnapUbuntuStoreRepository {
-	return &SnapUbuntuStoreRepository{
+// NewUbuntuStoreSnapRepository creates a new snapUbuntuStoreRepository
+func newUbuntuStoreSnapRepository() *snapUbuntuStoreRepository {
+	return &snapUbuntuStoreRepository{
 		searchURI:  "https://search.apps.ubuntu.com/api/v1/search?q=%s",
 		detailsURI: "https://search.apps.ubuntu.com/api/v1/package/%s",
 		bulkURI:    "https://myapps.developer.ubuntu.com/dev/api/click-metadata/"}
 }
 
 // Description describes the repository
-func (s *SnapUbuntuStoreRepository) Description() string {
+func (s *snapUbuntuStoreRepository) Description() string {
 	return fmt.Sprintf("Snap remote repository for %s", s.searchURI)
 }
 
 // Details returns details for the given snap in this repository
-func (s *SnapUbuntuStoreRepository) Details(snapName string) (parts []Part, err error) {
+func (s *snapUbuntuStoreRepository) Details(snapName string) (parts []Part, err error) {
 	url := fmt.Sprintf(s.detailsURI, snapName)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -397,7 +409,7 @@ func (s *SnapUbuntuStoreRepository) Details(snapName string) (parts []Part, err 
 	case resp.StatusCode == 404:
 		return parts, ErrRemoteSnapNotFound
 	case resp.StatusCode != 200:
-		return parts, fmt.Errorf("SnapUbuntuStoreRepository: unexpected http statusCode %v for %s", resp.StatusCode, snapName)
+		return parts, fmt.Errorf("snapUbuntuStoreRepository: unexpected http statusCode %v for %s", resp.StatusCode, snapName)
 	}
 
 	// and decode json
@@ -407,14 +419,14 @@ func (s *SnapUbuntuStoreRepository) Details(snapName string) (parts []Part, err 
 		return nil, err
 	}
 
-	snap := NewRemoteSnapPart(detailsData)
+	snap := newRemoteSnapPart(detailsData)
 	parts = append(parts, snap)
 
 	return parts, err
 }
 
 // Search searches the repository for the given searchTerm
-func (s *SnapUbuntuStoreRepository) Search(searchTerm string) (parts []Part, err error) {
+func (s *snapUbuntuStoreRepository) Search(searchTerm string) (parts []Part, err error) {
 	url := fmt.Sprintf(s.searchURI, searchTerm)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -443,7 +455,7 @@ func (s *SnapUbuntuStoreRepository) Search(searchTerm string) (parts []Part, err
 	}
 
 	for _, pkg := range searchData.Payload.Packages {
-		snap := NewRemoteSnapPart(pkg)
+		snap := newRemoteSnapPart(pkg)
 		parts = append(parts, snap)
 	}
 
@@ -451,7 +463,7 @@ func (s *SnapUbuntuStoreRepository) Search(searchTerm string) (parts []Part, err
 }
 
 // Updates returns the available updates
-func (s *SnapUbuntuStoreRepository) Updates() (parts []Part, err error) {
+func (s *snapUbuntuStoreRepository) Updates() (parts []Part, err error) {
 	// the store only supports apps and framworks currently, so no
 	// sense in sending it our ubuntu-core snap
 	installed, err := InstalledSnapNamesByType(SnapTypeApp, SnapTypeFramework)
@@ -482,7 +494,7 @@ func (s *SnapUbuntuStoreRepository) Updates() (parts []Part, err error) {
 	}
 
 	for _, pkg := range updateData {
-		snap := NewRemoteSnapPart(pkg)
+		snap := newRemoteSnapPart(pkg)
 		parts = append(parts, snap)
 	}
 
@@ -490,6 +502,6 @@ func (s *SnapUbuntuStoreRepository) Updates() (parts []Part, err error) {
 }
 
 // Installed returns the installed snaps from this repository
-func (s *SnapUbuntuStoreRepository) Installed() (parts []Part, err error) {
+func (s *snapUbuntuStoreRepository) Installed() (parts []Part, err error) {
 	return parts, err
 }

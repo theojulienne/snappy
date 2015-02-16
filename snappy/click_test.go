@@ -276,7 +276,7 @@ vendor: Foo Bar <foo@example.com>
 	c.Assert(installClick(snapFile, AllowUnauthenticated), IsNil)
 
 	// ensure v2 is active
-	repo := NewLocalSnapRepository(filepath.Join(s.tempdir, "apps"))
+	repo := newLocalSnapRepository(filepath.Join(s.tempdir, "apps"))
 	parts, err := repo.Installed()
 	c.Assert(err, IsNil)
 	c.Assert(len(parts), Equals, 2)
@@ -286,7 +286,7 @@ vendor: Foo Bar <foo@example.com>
 	c.Assert(parts[1].IsActive(), Equals, true)
 
 	// set v1 active
-	err = setActiveClick(parts[0].(*SnapPart).basedir)
+	err = setActiveClick(parts[0].(*snapPart).basedir)
 	parts, err = repo.Installed()
 	c.Assert(err, IsNil)
 	c.Assert(parts[0].Version(), Equals, "1.0")

@@ -140,7 +140,7 @@ func (m *MockSystemImage) CheckForUpdate() error {
 	sig := dbus.NewSignalMessage(systemImageObjectPath, systemImageInterface, "UpdateAvailableStatus")
 
 	// FIXME: the data we send in the signal is currently mostly
-	//        irrelevant as SystemImageRepository will recv the
+	//        irrelevant as systemImageRepository will recv the
 	//        signal but won't use the data and calls Information()
 	//        again instead
 	var size int32 = 1234
@@ -195,7 +195,7 @@ func (m *MockSystemImage) GetSetting(key string) (string, error) {
 type SITestSuite struct {
 	conn            *dbus.Connection
 	mockSystemImage *MockSystemImage
-	systemImage     *SystemImageRepository
+	systemImage     *systemImageRepository
 
 	tmpdir      string
 	mockService *DBusService
@@ -369,7 +369,7 @@ func (s *SITestSuite) TestSystemImagePartInstallUpdatesPartition(c *C) {
 	s.mockSystemImage.fakeAvailableVersion = "3.14"
 	parts, err := s.systemImage.Updates()
 
-	sp := parts[0].(*SystemImagePart)
+	sp := parts[0].(*systemImagePart)
 	mockPartition := MockPartition{}
 	sp.partition = &mockPartition
 
@@ -387,7 +387,7 @@ func (s *SITestSuite) TestSystemImagePartInstall(c *C) {
 	s.mockSystemImage.fakeAvailableVersion = "3.14"
 	parts, err := s.systemImage.Updates()
 
-	sp := parts[0].(*SystemImagePart)
+	sp := parts[0].(*systemImagePart)
 	mockPartition := MockPartition{}
 	sp.partition = &mockPartition
 
@@ -399,7 +399,7 @@ func (s *SITestSuite) TestSystemImagePartInstall(c *C) {
 func (s *SITestSuite) TestSystemImagePartSetActiveAlreadyActive(c *C) {
 	parts, err := s.systemImage.Installed()
 
-	sp := parts[0].(*SystemImagePart)
+	sp := parts[0].(*systemImagePart)
 	c.Assert(sp.IsActive(), Equals, true)
 	mockPartition := MockPartition{}
 	sp.partition = &mockPartition
@@ -412,7 +412,7 @@ func (s *SITestSuite) TestSystemImagePartSetActiveAlreadyActive(c *C) {
 func (s *SITestSuite) TestSystemImagePartSetActiveMakeActive(c *C) {
 	parts, err := s.systemImage.Installed()
 
-	sp := parts[1].(*SystemImagePart)
+	sp := parts[1].(*systemImagePart)
 	c.Assert(sp.IsActive(), Equals, false)
 	mockPartition := MockPartition{}
 	sp.partition = &mockPartition
