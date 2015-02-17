@@ -1,6 +1,6 @@
 test() {
        T="hello-world[[:space:]]+edge"
-       test_regexp "$T" sudo snappy install hello-world
+       test_regexp "$T" sudo $SNAPPY install hello-world
        
        T="Hello World!"
        test_equal "$T" echo.hello-world

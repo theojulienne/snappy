@@ -1,4 +1,4 @@
 test() {
        T="^No package 'fizzler' for ubuntu-core/devel.*"
-       test_regexp "$T" sudo snappy install fizzler
+       test_regexp "$T" sudo $SNAPPY install fizzler
 }

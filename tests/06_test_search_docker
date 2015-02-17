@@ -1,4 +1,4 @@
 test() {
        T="docker[[:space:]]+[0-9.]+[[:space:]]+.*"
-       test_regexp "$T" snappy search docker
+       test_regexp "$T" $SNAPPY search docker
 }

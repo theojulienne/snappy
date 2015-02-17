@@ -1,7 +1,7 @@
 test() {
     T="ubuntu-core.*edge"
-    test_regexp "$T" sudo snappy versions
+    test_regexp "$T" sudo $SNAPPY versions
 
     T="Part.*Tag.*Installed.*Available.*Fingerprint.*Active"
-    test_regexp "$T" sudo snappy versions
+    test_regexp "$T" sudo $SNAPPY versions
 }

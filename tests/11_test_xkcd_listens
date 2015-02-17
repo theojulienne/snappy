@@ -1,7 +1,7 @@
 test() {
-       # FIXME: add snappy search webserver
+       # FIXME: add $SNAPPY search webserver
        
-       sudo snappy install xkcd-webserver
+       sudo $SNAPPY install xkcd-webserver
        T="HTTP/1.0 200 OK"
        printf "GET / HTTP/1.0\n\n"|nc localhost 80 > xkcd.html
        test_regexp "$T" cat xkcd.html
