@@ -1,5 +1,5 @@
 test() {
     test_regexp "^release: ubuntu-core/devel.*" $SNAPPY info
-    test_regexp "^frameworks: *$" $SNAPPY info
+    test_regexp "^frameworks: (webdm|)*$" $SNAPPY info
     test_regexp "^apps: ($SNAPPY-selftest|)*$" snappy info
 }
