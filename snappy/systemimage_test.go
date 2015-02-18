@@ -28,6 +28,9 @@ type DBusService struct {
 	BusPath      string
 	BusName      string
 
+	// the actual name on the bus
+	nameOnBus *dbus.BusName
+
 	actor interface{}
 }
 
@@ -45,8 +48,8 @@ func NewDBusService(conn *dbus.Connection, interf, path, name string, actor DBus
 		actor:        actor}
 	runtime.SetFinalizer(s, cleanupDBusService)
 
-	nameOnBus := conn.RequestName(name, dbus.NameFlagDoNotQueue)
-	err := <-nameOnBus.C
+	s.nameOnBus = conn.RequestName(name, dbus.NameFlagDoNotQueue)
+	err := <-s.nameOnBus.C
 	if err != nil {
 		fmt.Errorf("bus name coule not be taken %s", err)
 		return nil
@@ -113,6 +116,10 @@ type MockSystemImage struct {
 	service   *DBusService
 	partition *partition.Partition
 
+	// this bool will simulate a crash for the dbus daemon in
+	// CheckForUpdate
+	dieInDownloadUpdate bool
+
 	fakeAvailableVersion string
 	info                 map[string]string
 }
@@ -161,6 +168,13 @@ func (m *MockSystemImage) CheckForUpdate() error {
 }
 
 func (m *MockSystemImage) DownloadUpdate() error {
+	// if this is set we simulate a crashing daemon here :)
+	if m.dieInDownloadUpdate {
+		fmt.Println("Simulating crash")
+		m.service.nameOnBus.Release()
+		return nil
+	}
+
 	// send progress
 	for i := 1; i <= 5; i++ {
 		sig := dbus.NewSignalMessage(systemImageObjectPath, systemImageInterface, "UpdateProgress")
@@ -420,4 +434,10 @@ func (s *SITestSuite) TestSystemImagePartSetActiveMakeActive(c *C) {
 	err = sp.SetActive()
 	c.Assert(err, IsNil)
 	c.Assert(mockPartition.updateBootloaderCalled, Equals, true)
+}
+
+func (s *SITestSuite) TestCrashingDbusDaemonDoesNotHangForever(c *C) {
+	s.mockSystemImage.dieInDownloadUpdate = true
+	err := s.systemImage.proxy.DownloadUpdate()
+	c.Assert(err, NotNil)
 }

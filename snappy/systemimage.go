@@ -39,6 +39,11 @@ const (
 	systemImageClientConfig = "/etc/system-image/client.ini"
 )
 
+var (
+	// ErrUpdateFailed indicates a error from system-image
+	ErrUpdateFailed = errors.New("Update failed to apply or download")
+)
+
 // SystemImagePart represents a "core" snap that is managed via the SystemImage
 // client
 type SystemImagePart struct {
@@ -229,6 +234,8 @@ type systemImageDBusProxy struct {
 	updateApplied         *SensibleWatch
 	updateDownloaded      *SensibleWatch
 	updateFailed          *SensibleWatch
+
+	nameOwnerChanged *dbus.NameWatch
 }
 
 // this functions only exists to make testing easier, i.e. the testsuite
@@ -277,11 +284,30 @@ func newSystemImageDBusProxy(bus dbus.StandardBus) *systemImageDBusProxy {
 		return nil
 	}
 
+	// we need to deal with a crashing daemon
+	p.nameOwnerChanged, err = p.connection.WatchName(systemImageBusName)
+	if err != nil {
+		log.Printf(fmt.Sprintf("Warning: %v", err))
+		return nil
+	}
+	go func() {
+		for newOwner := range p.nameOwnerChanged.C {
+			if newOwner == "" {
+				// we create a synthetic fail message if
+				// the name owner vanishes
+				log.Printf("WARNING: %s vanished from the bus", systemImageBusName)
+				failMsg := &dbus.Message{}
+				p.updateFailed.C <- failMsg
+			}
+		}
+	}()
+
 	runtime.SetFinalizer(p, func(p *systemImageDBusProxy) {
 		p.updateAvailableStatus.Cancel()
 		p.updateApplied.Cancel()
 		p.updateDownloaded.Cancel()
 		p.updateFailed.Cancel()
+		p.nameOwnerChanged.Cancel()
 	})
 
 	return p
@@ -368,7 +394,7 @@ func (s *systemImageDBusProxy) ApplyUpdate() (err error) {
 	case _ = <-s.updateApplied.C:
 		break
 	case _ = <-s.updateFailed.C:
-		return errors.New("updateFailed")
+		return ErrUpdateFailed
 	}
 	return nil
 }
@@ -383,7 +409,7 @@ func (s *systemImageDBusProxy) DownloadUpdate() (err error) {
 	case _ = <-s.updateDownloaded.C:
 		s.ApplyUpdate()
 	case _ = <-s.updateFailed.C:
-		return errors.New("downloadFailed")
+		return ErrUpdateFailed
 	}
 
 	return err
@@ -439,10 +465,11 @@ func (s *systemImageDBusProxy) CheckForUpdate() (us updateStatus, err error) {
 			&s.us.updateSize,
 			&s.us.lastUpdateDate,
 			&s.us.errorReason)
+	case _ = <-s.updateFailed.C:
+		return us, ErrUpdateFailed
 
 	case <-time.After(systemImageTimeoutSecs * time.Second):
-		err = fmt.Errorf("Warning: timed out after %d seconds waiting for system image server to respond",
-			systemImageTimeoutSecs)
+		return us, fmt.Errorf("Warning: timed out after %d seconds waiting for system image server to respond", systemImageTimeoutSecs)
 	}
 
 	return s.us, err
