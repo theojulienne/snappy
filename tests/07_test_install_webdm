@@ -5,6 +5,6 @@ test() {
     test_regexp "$T" sudo $SNAPPY install webdm
 
     # ensure its there
-    service_count=$(systemctl | grep 'webdm_.*.service' | wc -l)
-    test_equal "$service_count" 2
+    services=$(systemctl | grep 'webdm_.*.service')
+    [ -n "$services" ] || fail webdm provided no services
 }
