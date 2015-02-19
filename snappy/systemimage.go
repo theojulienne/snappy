@@ -469,7 +469,7 @@ func (s *systemImageDBusProxy) CheckForUpdate() (us updateStatus, err error) {
 		return us, ErrUpdateFailed
 
 	case <-time.After(systemImageTimeoutSecs * time.Second):
-		return us, fmt.Errorf("Warning: timed out after %d seconds waiting for system image server to respond", systemImageTimeoutSecs)
+		return us, fmt.Errorf("timed out after %d seconds waiting for system image server to respond", systemImageTimeoutSecs)
 	}
 
 	return s.us, err
