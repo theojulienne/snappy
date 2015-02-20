@@ -201,6 +201,9 @@ type SITestSuite struct {
 	mockService *DBusService
 
 	privateDbusPid string
+
+	originalVerifyFunction func(s *SystemImagePart) (err error)
+	testVerifyFunction func(s *SystemImagePart) (err error)
 }
 
 var _ = Suite(&SITestSuite{})
@@ -214,6 +217,15 @@ func (s *SITestSuite) SetUpSuite(c *C) {
 	s.privateDbusPid = output[1]
 	dbusEnv := output[0]
 	os.Setenv("DBUS_SESSION_BUS_ADDRESS", dbusEnv)
+
+	// save
+	s.originalVerifyFunction = verifyUpgradeWasApplied
+
+	s.testVerifyFunction = func(s *SystemImagePart) (err error) {
+		return nil
+	}
+
+	verifyUpgradeWasApplied = s.testVerifyFunction
 }
 
 func (s *SITestSuite) TearDownSuite(c *C) {
@@ -420,4 +432,57 @@ func (s *SITestSuite) TestSystemImagePartSetActiveMakeActive(c *C) {
 	err = sp.SetActive()
 	c.Assert(err, IsNil)
 	c.Assert(mockPartition.updateBootloaderCalled, Equals, true)
+}
+
+func (s *SITestSuite) TestSystemImageUpgradeVerify(c *C) {
+
+	// switch to the real verify function
+	verifyUpgradeWasApplied = s.originalVerifyFunction
+	defer func() {
+		verifyUpgradeWasApplied = s.testVerifyFunction
+	}()
+
+	parts, err := s.systemImage.Installed()
+	c.Assert(err, IsNil)
+
+	// expect one active and one inactive
+	c.Assert(len(parts), Equals, 2)
+
+	current := parts[0]
+	originalOther := parts[1]
+
+	c.Assert(current.IsActive(), Equals, true)
+	c.Assert(originalOther.IsActive(), Equals, false)
+
+	// Expect version of current and other to be different
+	c.Assert(current.Version(), Not(Equals), originalOther.Version())
+
+	// specifics
+	c.Assert(current.Version(), Equals, "2.71")
+	c.Assert(originalOther.Version(), Equals, "3.14")
+
+	// other should be newer
+	c.Assert(VersionCompare(originalOther.Version(), current.Version()), Equals, 1)
+
+	s.mockSystemImage.fakeAvailableVersion = "9.99"
+	updates, err := s.systemImage.Updates()
+	c.Assert(err, IsNil)
+
+	c.Assert(len(updates), Equals, 1)
+	latest := updates[0].(*SystemImagePart)
+	c.Assert(latest.Version(), Equals, "9.99")
+
+	// latest should be newer than other
+	c.Assert(VersionCompare(latest.Version(), originalOther.Version()), Equals, 1)
+
+	tmpdir := c.MkDir()
+	s.systemImage.myroot = tmpdir
+	makeFakeSystemImageChannelConfig(c, filepath.Join(tmpdir, systemImageChannelConfig), "9.99")
+
+	mockPartition := MockPartition{}
+	latest.partition = &mockPartition
+
+	pb := &MockProgressMeter{}
+	err = latest.Install(pb)
+	c.Assert(err, IsNil)
 }

@@ -161,7 +161,7 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 	}
 
 	// Check that the final system state is as expected.
-	if err = s.verifyUpgradeWasApplied(); err != nil {
+	if err = verifyUpgradeWasApplied(s); err != nil {
 		return err
 	}
 
@@ -176,23 +176,19 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 }
 
 // Ensure the expected version update was applied to the expected partition.
-func (s *SystemImagePart) verifyUpgradeWasApplied() (err error) {
+var verifyUpgradeWasApplied = func(s *SystemImagePart) (err error) {
 	// The upgrade has now been applied, so check that the expected
 	// update was applied by comparing "self" (which is the newest
 	// system-image revision with that installed on the other
 	// partition.
 
-	// Create a new repository to force a reload of the partition
-	// details (to ensure we are not using cached information).
-	repo := NewSystemImageRepository()
-
 	// Determine the latest installed part.
-	latestPart := repo.otherPart()
+	latestPart := otherPart()
 	if latestPart == nil {
 		// If there is no other part, this system must be a
 		// single rootfs one, so re-query current to find the
 		// latest installed part.
-		latestPart = repo.currentPart()
+		latestPart = currentPart()
 	}
 
 	if latestPart == nil {
@@ -509,7 +505,7 @@ func (s *SystemImageRepository) Description() string {
 	return "SystemImageRepository"
 }
 
-func (s *SystemImageRepository) makePartFromSystemImageConfigFile(path string, isActive bool) (part Part, err error) {
+func makePartFromSystemImageConfigFile(path string, isActive bool, proxy *systemImageDBusProxy, partition Partition) (part Part, err error) {
 	cfg := goconfigparser.New()
 	f, err := os.Open(path)
 	if err != nil {
@@ -528,11 +524,11 @@ func (s *SystemImageRepository) makePartFromSystemImageConfigFile(path string, i
 	return &SystemImagePart{
 		isActive:       isActive,
 		isInstalled:    true,
-		proxy:          s.proxy,
+		proxy:          proxy,
 		version:        currentBuildNumber,
 		versionDetails: versionDetails,
 		channelName:    channelName,
-		partition:      s.partition}, err
+		partition:      partition}, err
 }
 
 func (s *SystemImageRepository) currentPart() Part {
@@ -545,10 +541,10 @@ func (s *SystemImageRepository) currentPart() Part {
 }
 
 // Returns the part associated with the other rootfs (if any)
-func (s *SystemImageRepository) otherPart() Part {
+func otherPart(root string, partition Partition) Part {
 	var part Part
-	err := s.partition.RunWithOther(partition.RO, func(otherRoot string) (err error) {
-		configFile := filepath.Join(s.myroot, otherRoot, systemImageChannelConfig)
+	err := partition.RunWithOther(partition.RO, func(otherRoot string) (err error) {
+		configFile := filepath.Join(root, otherRoot, systemImageChannelConfig)
 		_, err = os.Stat(configFile)
 		if err != nil && os.IsNotExist(err) {
 			// config file doesn't exist, meaning the other
@@ -557,7 +553,7 @@ func (s *SystemImageRepository) otherPart() Part {
 			// which only have 1 partition pre-installed).
 			return nil
 		}
-		part, err = s.makePartFromSystemImageConfigFile(configFile, false)
+		part, err = makePartFromSystemImageConfigFile(configFile, false, s.proxy, s.partition)
 		if err != nil {
 			log.Printf("Can not make system-image part for %s: %s", configFile, err)
 		}
