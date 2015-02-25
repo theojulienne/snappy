@@ -286,21 +286,20 @@ func newSystemImageDBusProxy(bus dbus.StandardBus) *systemImageDBusProxy {
 
 	// we need to deal with a crashing daemon
 	p.nameOwnerChanged, err = p.connection.WatchName(systemImageBusName)
-	if err != nil {
-		log.Printf(fmt.Sprintf("Warning: %v", err))
-		return nil
-	}
-	go func() {
-		for newOwner := range p.nameOwnerChanged.C {
-			if newOwner == "" {
-				// we create a synthetic fail message if
-				// the name owner vanishes
-				log.Printf("WARNING: %s vanished from the bus", systemImageBusName)
-				failMsg := &dbus.Message{}
-				p.updateFailed.C <- failMsg
+	if err == nil {
+		// setup watcher
+		go func() {
+			for newOwner := range p.nameOwnerChanged.C {
+				if newOwner == "" {
+					// we create a synthetic fail message if
+					// the name owner vanishes
+					log.Printf("WARNING: %s vanished from the bus", systemImageBusName)
+					failMsg := &dbus.Message{}
+					p.updateFailed.C <- failMsg
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	runtime.SetFinalizer(p, func(p *systemImageDBusProxy) {
 		p.updateAvailableStatus.Cancel()
