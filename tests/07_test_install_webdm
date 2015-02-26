@@ -1,0 +1,10 @@
+test() {
+    # we test for the final line contains the webdm command
+    # FIXME: test progress here too
+    T="webdm[[:space:]]+edge[[:space:]]+[0-9.]+[[:space:]]+-[[:space:]]+[0-9a-f]+[[:space:]]+*"    
+    test_regexp "$T" sudo $SNAPPY install webdm
+
+    # ensure its there
+    services=$(systemctl | grep 'webdm_.*.service')
+    [ -n "$services" ] || fail webdm provided no services
+}
