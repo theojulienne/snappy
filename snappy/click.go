@@ -281,8 +281,6 @@ func writeHashesFile(snapFile, instDir string) error {
 }
 
 func installClick(snapFile string, flags InstallFlags) (err error) {
-	// FIXME: drop privs to "snap:snap" here
-	// like in http://bazaar.launchpad.net/~phablet-team/goget-ubuntu-touch/trunk/view/head:/sysutils/utils.go#L64
 
 	allowUnauthenticated := (flags & AllowUnauthenticated) != 0
 	err = auditClick(snapFile, allowUnauthenticated)
@@ -292,7 +290,16 @@ func installClick(snapFile string, flags InstallFlags) (err error) {
 		//return SnapAuditError
 	}
 
-	cmd := exec.Command("dpkg-deb", "-I", snapFile, "manifest")
+	// ensure permissions
+	err = chownToUnprivileged(snapFile)
+	if err != nil {
+		return err
+	}
+
+	cmd, err := unprivilegedCommand("dpkg-deb", "-I", snapFile, "manifest")
+	if err != nil {
+		return err
+	}
 	manifestData, err := cmd.Output()
 	if err != nil {
 		log.Printf("Snap inspect failed: %s", snapFile)
@@ -311,8 +318,11 @@ func installClick(snapFile string, flags InstallFlags) (err error) {
 		targetDir = snapOemDir
 	}
 
+	// ensure partent gets created with the right permissions if needed
+	ensureUnprivilegedDir(filepath.Join(targetDir, manifest.Name), 0755)
+	// and actual install dir
 	instDir := filepath.Join(targetDir, manifest.Name, manifest.Version)
-	if err := ensureDir(instDir, 0755); err != nil {
+	if err := ensureUnprivilegedDir(instDir, 0755); err != nil {
 		log.Printf("WARNING: Can not create %s", instDir)
 	}
 
@@ -328,9 +338,11 @@ func installClick(snapFile string, flags InstallFlags) (err error) {
 		}
 	}()
 
-	// FIXME: replace this with a native extractor to avoid attack
-	//        surface
-	cmd = exec.Command("dpkg-deb", "--extract", snapFile, instDir)
+	// FIXME: replace this with a native extractor
+	cmd, err = unprivilegedCommand("dpkg-deb", "--extract", snapFile, instDir)
+	if err != nil {
+		return err
+	}
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		// FIXME: make the output part of the SnapExtractError

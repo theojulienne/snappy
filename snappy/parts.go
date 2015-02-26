@@ -21,6 +21,11 @@ const (
 	SnapTypeOem       SnapType = "oem"
 )
 
+// The user that own the packages on the filesystem
+const (
+	snappyUnprivilegedUser = "clickpkg"
+)
+
 // Part representation of a snappy part
 type Part interface {
 

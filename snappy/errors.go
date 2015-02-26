@@ -23,4 +23,7 @@ var (
 	// ErrConfigNotFound is returned if a snap without a config is
 	// getting configured
 	ErrConfigNotFound = errors.New("No config found for this snap")
+
+	// ErrDropPrivileges is returned when dropping privileges did not work
+	ErrDropPrivileges = errors.New("Can not drop privileges")
 )

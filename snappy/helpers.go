@@ -9,8 +9,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -130,6 +132,39 @@ func ensureDir(dir string, perm os.FileMode) (err error) {
 	return nil
 }
 
+// Ensure the given directory exists and if not create it with the given
+// permissions
+func ensureUnprivilegedDir(dir string, perm os.FileMode) error {
+	if err := ensureDir(dir, perm); err != nil {
+		return err
+	}
+
+	return chownToUnprivileged(dir)
+}
+
+func chownToUnprivileged(path string) error {
+	// already unprivileged
+	if os.Getuid() != 0 {
+		return nil
+	}
+
+	u, err := user.Lookup(snappyUnprivilegedUser)
+	if err != nil {
+		return ErrDropPrivileges
+	}
+
+	uid, err := strconv.Atoi(u.Uid)
+	if err != nil {
+		return err
+	}
+	gid, err := strconv.Atoi(u.Gid)
+	if err != nil {
+		return err
+	}
+
+	return os.Chown(path, uid, gid)
+}
+
 func sha512sum(infile string) (hexdigest string, err error) {
 	r, err := os.Open(infile)
 	if err != nil {
@@ -187,4 +222,19 @@ func makeSnapHookEnv(part *SnapPart) (env []string) {
 	}
 
 	return env
+}
+
+func unprivilegedCommand(cmd ...string) (*exec.Cmd, error) {
+	if syscall.Getuid() != 0 {
+		// privs already dropped
+		return exec.Command(cmd[0], cmd[1:]...), nil
+	}
+
+	u, err := user.Lookup(snappyUnprivilegedUser)
+	if err != nil {
+		return nil, ErrDropPrivileges
+	}
+
+	cmdArgs := append([]string{"sudo", "-u", u.Username}, cmd...)
+	return exec.Command(cmdArgs[0], cmdArgs[1:]...), nil
 }
