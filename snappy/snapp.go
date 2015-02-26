@@ -12,8 +12,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	yaml "launchpad.net/goyaml"
+	"gopkg.in/yaml.v2"
 )
 
 // snapPart represents a generic snap type
@@ -37,6 +38,12 @@ type packageYaml struct {
 	Type    SnapType
 }
 
+// the meta/hashes file, yaml so that we can extend it later with
+// more/different hashes
+type hashesYaml struct {
+	Sha512 string
+}
+
 type remoteSnap struct {
 	Publisher       string  `json:"publisher,omitempty"`
 	Name            string  `json:"name"`
@@ -49,6 +56,8 @@ type remoteSnap struct {
 	AnonDownloadURL string  `json:"anon_download_url, omitempty"`
 	DownloadURL     string  `json:"download_url, omitempty"`
 	DownloadSha512  string  `json:"download_sha512, omitempty"`
+	LastUpdated     string  `json:"last_updated, omitempty"`
+	DownloadSize    int64   `json:"binary_filesize, omitempty"`
 }
 
 type searchResults struct {
@@ -96,6 +105,17 @@ func newInstalledSnapPart(yamlPath string) *snapPart {
 	}
 	part.stype = m.Type
 
+	// read hash, its ok if its not there, some older versions of
+	// snappy did not write this file
+	hashesData, err := ioutil.ReadFile(filepath.Join(part.basedir, "meta", "hashes"))
+	if err == nil {
+		var h hashesYaml
+		err = yaml.Unmarshal(hashesData, &h)
+		if err == nil {
+			part.hash = h.Sha512
+		}
+	}
+
 	return &part
 }
 
@@ -123,15 +143,15 @@ func (s *snapPart) Description() string {
 	return s.description
 }
 
-// Channel returns the channel
-func (s *snapPart) Channel() string {
-	// FIXME: hardcoded
-	return "edge"
-}
-
 // Hash returns the hash
 func (s *snapPart) Hash() string {
 	return s.hash
+}
+
+// Channel returns the channel used
+func (s *snapPart) Channel() string {
+	// FIXME: real channel support
+	return "edge"
 }
 
 // IsActive returns true if the snap is active
@@ -145,13 +165,30 @@ func (s *snapPart) IsInstalled() bool {
 }
 
 // InstalledSize returns the size of the installed snap
-func (s *snapPart) InstalledSize() int {
-	return -1
+func (s *snapPart) InstalledSize() int64 {
+	// FIXME: cache this at install time maybe?
+	totalSize := int64(0)
+	f := func(_ string, info os.FileInfo, err error) error {
+		totalSize += info.Size()
+		return err
+	}
+	filepath.Walk(s.basedir, f)
+	return totalSize
 }
 
 // DownloadSize returns the dowload size
-func (s *snapPart) DownloadSize() int {
+func (s *snapPart) DownloadSize() int64 {
 	return -1
+}
+
+// Date returns the last update date
+func (s *snapPart) Date() time.Time {
+	st, err := os.Stat(s.basedir)
+	if err != nil {
+		return time.Time{}
+	}
+
+	return st.ModTime()
 }
 
 // Install installs the snap
@@ -166,13 +203,19 @@ func (s *snapPart) SetActive() (err error) {
 
 // Uninstall remove the snap from the system
 func (s *snapPart) Uninstall() (err error) {
-	err = removeClick(s.basedir)
-	return err
+	// OEM snaps should not be removed as they are a key
+	// building block for OEMs. Prunning non active ones
+	// is acceptible.
+	if s.stype == SnapTypeOem && s.IsActive() {
+		return ErrPackageNotRemovable
+	}
+
+	return removeClick(s.basedir)
 }
 
 // Config is used to to configure the snap
-func (s *snapPart) Config(configuration []byte) (err error) {
-	return err
+func (s *snapPart) Config(configuration []byte) (new string, err error) {
+	return snapConfig(s.basedir, string(configuration))
 }
 
 // NeedsReboot returns true if the snap becomes active on the next reboot
@@ -267,15 +310,15 @@ func (s *remoteSnapPart) Description() string {
 	return s.pkg.Title
 }
 
-// Channel returns the channel
-func (s *remoteSnapPart) Channel() string {
-	// FIXME: hardcoded
-	return "edge"
-}
-
 // Hash returns the hash
 func (s *remoteSnapPart) Hash() string {
-	return "FIXME"
+	return s.pkg.DownloadSha512
+}
+
+// Channel returns the channel used
+func (s *remoteSnapPart) Channel() string {
+	// FIXME: real channel support, this requires server work
+	return "edge"
 }
 
 // IsActive returns true if the snap is active
@@ -289,13 +332,23 @@ func (s *remoteSnapPart) IsInstalled() bool {
 }
 
 // InstalledSize returns the size of the installed snap
-func (s *remoteSnapPart) InstalledSize() int {
+func (s *remoteSnapPart) InstalledSize() int64 {
 	return -1
 }
 
 // DownloadSize returns the dowload size
-func (s *remoteSnapPart) DownloadSize() int {
-	return -1
+func (s *remoteSnapPart) DownloadSize() int64 {
+	return s.pkg.DownloadSize
+}
+
+// Date returns the last update time
+func (s *remoteSnapPart) Date() time.Time {
+	p, err := time.Parse("2006-01-02T15:04:05.000000Z", s.pkg.LastUpdated)
+	if err != nil {
+		return time.Time{}
+	}
+
+	return p
 }
 
 // Install installs the snap
@@ -347,8 +400,8 @@ func (s *remoteSnapPart) Uninstall() (err error) {
 }
 
 // Config is used to to configure the snap
-func (s *remoteSnapPart) Config(configuration []byte) (err error) {
-	return err
+func (s *remoteSnapPart) Config(configuration []byte) (new string, err error) {
+	return "", err
 }
 
 // NeedsReboot returns true if the snap becomes active on the next reboot
@@ -369,12 +422,13 @@ type snapUbuntuStoreRepository struct {
 	bulkURI    string
 }
 
-// NewUbuntuStoreSnapRepository creates a new snapUbuntuStoreRepository
+// NewUbuntuStoreSnapRepository creates a new SnapUbuntuStoreRepository
 func newUbuntuStoreSnapRepository() *snapUbuntuStoreRepository {
+	// see https://wiki.ubuntu.com/AppStore/Interfaces/ClickPackageIndex
 	return &snapUbuntuStoreRepository{
 		searchURI:  "https://search.apps.ubuntu.com/api/v1/search?q=%s",
 		detailsURI: "https://search.apps.ubuntu.com/api/v1/package/%s",
-		bulkURI:    "https://myapps.developer.ubuntu.com/dev/api/click-metadata/"}
+		bulkURI:    "https://search.apps.ubuntu.com/api/v1/click-metadata"}
 }
 
 // Description describes the repository

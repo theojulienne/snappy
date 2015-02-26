@@ -62,6 +62,9 @@ type bootLoader interface {
 	// Update the bootloader configuration to mark the
 	// currently-booted rootfs as having booted successfully.
 	MarkCurrentBootSuccessful() error
+
+	// Return the additional required chroot bind mounts for this bootloader
+	AdditionalBindMounts() []string
 }
 
 type bootloaderType struct {
@@ -71,10 +74,6 @@ type bootloaderType struct {
 	// from the last character of the partition name ('a' or 'b').
 	currentRootfs string
 	otherRootfs   string
-
-	// full path to
-	currentBootPath string
-	otherBootPath   string
 }
 
 // Factory method that returns a new bootloader for the given partition
