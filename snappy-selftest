@@ -8,11 +8,26 @@ SNAPPY=snappy
 
 MYDIR=$(dirname $0)
 for test in $MYDIR/tests/*_test_*; do
-    echo "Running $test"
+    CURRENT_TEST=$(basename $test)
+
+    # after a reboot, skip ahead to the test that triggered it
+    if [ -n "$ADT_REBOOT_MARK" ]; then
+        if [ "$ADT_REBOOT_MARK" == "$CURRENT_TEST" ]; then
+            echo "Resuming $test after reboot"
+        else
+            continue
+        fi
+    else
+        echo "Running $test"
+    fi
+
     . "$test"
     if ! OUTPUT=$(test 2>&1); then
         echo "FAILED: $test"
         echo "$OUTPUT"
         exit 1
     fi
+
+    # clear reboot marker
+    unset ADT_REBOOT_MARK
 done

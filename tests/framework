@@ -18,3 +18,29 @@ test_regexp() {
         fail
     fi
 }
+
+# check if reboot is supported; this needs running with autopkgtest on a
+# supported testbed (QEMU or ssh with a setup script that announces the
+# "reboot" capability)
+can_reboot() {
+    [ -x /tmp/autopkgtest-reboot ]
+}
+
+# reboot the testbed; the same test will be started again, check after_reboot()
+# to see in which state you are in
+reboot() {
+    if [ -z "$CURRENT_TEST" ]; then
+        echo 'ERROR: $CURRENT_TEST not defined' >&2
+        exit 1
+    fi
+    echo "Rebooting testbed..."
+    sudo /tmp/autopkgtest-reboot "$CURRENT_TEST"
+}
+
+# true if the current test reboot()ed and is now restarted after boot; false if
+# it's the first time the test runs (or reboot is not supported)
+after_reboot() {
+    [ "$ADT_REBOOT_MARK" = "$CURRENT_TEST" ]
+}
+
+# vim: filetype=sh shiftwidth=4
