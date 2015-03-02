@@ -22,9 +22,8 @@ for test in $MYDIR/tests/*_test_*; do
     fi
 
     . "$test"
-    if ! OUTPUT=$(test 2>&1); then
+    if ! (test 2>&1); then
         echo "FAILED: $test"
-        echo "$OUTPUT"
         exit 1
     fi
 
