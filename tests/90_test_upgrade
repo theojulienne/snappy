@@ -1,0 +1,46 @@
+# Test that we can upgrade to the latest image version and roll back to the
+# original version. Test will be skipped if there is no later image available,
+# or the testbed does not offer reboot (needs autopkgtest with a supporting
+# runner).
+
+test() {
+    can_reboot || { echo "SKIP: cannot reboot testbed"; return; }
+
+    versions=$(snappy versions)
+    current=$(echo "$versions" | awk '/ubuntu-core/ {print $3}')
+    avail=$(echo "$versions" | awk '/ubuntu-core/ {print $4}')
+    echo "current snappy version: $current"
+    echo "available snappy version to upgrade: $avail"
+
+    if after_reboot; then
+        # second reboot: after rollback
+        if [ -e $ADT_ARTIFACTS/rolled_back ]; then
+            orig_current=$(cat $ADT_ARTIFACTS/current)
+            [ "$orig_current" = "$current" ] || fail "did not roll back to version $orig_current"
+            return
+        fi
+
+        # first reboot: after upgrade
+        orig_avail=$(cat $ADT_ARTIFACTS/avail)
+        [ "$orig_avail" = "$current" ] || fail "did not upgrade to current version"
+
+        echo "rolling back..."
+        sudo snappy rollback ubuntu-core
+        touch $ADT_ARTIFACTS/rolled_back
+        reboot
+        return
+    fi
+
+    # skip if not numeric, e. g. "-"
+    [ "$avail" != "${avail#[0-9]}" ] || { echo "SKIP: no image to upgrade to"; return; }
+
+    [ $avail -gt $current ] || fail "$avail is not newer than $current"
+
+    # save version for post-upgrade test
+    echo "$avail" > $ADT_ARTIFACTS/avail
+    echo "$current" > $ADT_ARTIFACTS/current
+
+    echo "upgrading..."
+    sudo snappy update
+    reboot
+}
