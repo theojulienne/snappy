@@ -136,9 +136,6 @@ type Interface interface {
 	ToggleNextBoot() error
 
 	MarkBootSuccessful() error
-	// FIXME: could we make SyncBootloaderFiles part of ToogleBootloader
-	//        to expose even less implementation details?
-	SyncBootloaderFiles() error
 	IsNextBootOther() bool
 
 	// run the function f with the otherRoot mounted
@@ -466,16 +463,6 @@ func (p *Partition) RunWithOther(option MountOption, f func(otherRoot string) (e
 
 	err = f(p.MountTarget())
 	return err
-}
-
-// SyncBootloaderFiles syncs the bootloader files
-// FIXME: can we unexport this?
-func (p *Partition) SyncBootloaderFiles() (err error) {
-	bootloader, err := getBootloader(p)
-	if err != nil {
-		return err
-	}
-	return bootloader.SyncBootFiles()
 }
 
 // ToggleNextBoot toggles the roofs that should be used on the next boot

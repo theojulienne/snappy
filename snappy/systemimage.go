@@ -139,13 +139,6 @@ func (s *SystemImagePart) Install(pb ProgressMeter) (err error) {
 		}()
 	}
 
-	// Ensure there is always a kernel + initrd to boot with, even
-	// if the update does not provide new versions.
-	err = s.partition.SyncBootloaderFiles()
-	if err != nil {
-		return err
-	}
-
 	// find out what config file to use, the other partition may be
 	// empty so we need to fallback to the current one if it is
 	configFile := systemImageClientConfig

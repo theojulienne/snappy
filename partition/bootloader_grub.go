@@ -118,11 +118,6 @@ func (g *grub) MarkCurrentBootSuccessful() (err error) {
 	return g.setBootVar(bootloaderBootmodeVar, bootloaderBootmodeSuccess)
 }
 
-func (g *grub) SyncBootFiles() (err error) {
-	// NOP
-	return nil
-}
-
 func (g *grub) HandleAssets() (err error) {
 
 	// NOP - since grub is used on generic hardware, it doesn't

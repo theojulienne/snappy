@@ -33,11 +33,6 @@ type bootLoader interface {
 	// filesystem partition will be used on next boot.
 	ToggleRootFS() error
 
-	// Hook function called before system-image starts downloading
-	// and applying archives that allows files to be copied between
-	// partitions.
-	SyncBootFiles() error
-
 	// Install any hardware-specific files that system-image
 	// downloaded.
 	HandleAssets() error

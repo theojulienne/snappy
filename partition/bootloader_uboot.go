@@ -180,16 +180,6 @@ func (u *uboot) MarkCurrentBootSuccessful() (err error) {
 	return os.RemoveAll(bootloaderUbootStampFile)
 }
 
-func (u *uboot) SyncBootFiles() (err error) {
-	srcDir := u.currentBootPath
-	destDir := u.otherBootPath
-
-	// always start from scratch: all files here are owned by us.
-	os.RemoveAll(destDir)
-
-	return runCommand("/bin/cp", "-a", srcDir, destDir)
-}
-
 func (u *uboot) HandleAssets() (err error) {
 	// check if we have anything, if there is no hardware yaml, there is nothing
 	// to process.
