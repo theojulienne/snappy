@@ -353,7 +353,7 @@ fi
 export HOME="$SNAP_APP_USER_DATA_PATH"
 
 # convinience for the developer
-LD_LIRARY_PATH=$LD_LIBRARY_PATH:/apps/pastebinit.mvo/1.4.0.0.1/:/apps/pastebinit.mvo/1.4.0.0.1/lib/$SNAPPY_APP_ARCH
+LD_LIRARY_PATH=$LD_LIBRARY_PATH:/apps/pastebinit.mvo/1.4.0.0.1/bin:/apps/pastebinit.mvo/1.4.0.0.1/lib/$SNAPPY_APP_ARCH
 
 # export old pwd
 export SNAP_OLD_PWD="$(pwd)"

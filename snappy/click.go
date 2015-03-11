@@ -354,7 +354,7 @@ fi
 export HOME="$SNAP_APP_USER_DATA_PATH"
 
 # convinience for the developer
-LD_LIRARY_PATH=$LD_LIBRARY_PATH:{{.Path}}:{{.Path}}lib/$SNAPPY_APP_ARCH
+LD_LIRARY_PATH=$LD_LIBRARY_PATH:{{.BinPath}}:{{.Path}}lib/$SNAPPY_APP_ARCH
 
 # export old pwd
 export SNAP_OLD_PWD="$(pwd)"
@@ -368,10 +368,11 @@ aa-exec -p {{.AaProfile}} -- {{.Target}} "$@"
 	wrapperData := struct {
 		packageYaml
 		Target    string
+		BinPath   string
 		Path      string
 		AaProfile string
 	}{
-		*m, actualBinPath, pkgPath, aaProfile,
+		*m, actualBinPath, filepath.Dir(actualBinPath), pkgPath, aaProfile,
 	}
 	t.Execute(&templateOut, wrapperData)
 
