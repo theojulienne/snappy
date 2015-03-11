@@ -219,3 +219,36 @@ vendor: Foo <foo@example.com>
  }
 }`
 }
+
+func (s *SnapTestSuite) TestBuildCreateDebianMd5sumSimple(c *C) {
+	tempdir := c.MkDir()
+
+	// debian dir is ignored
+	err := os.MkdirAll(filepath.Join(tempdir, "DEBIAN"), 0755)
+	c.Assert(err, IsNil)
+	err = ioutil.WriteFile(filepath.Join(tempdir, "DEBIAN", "bar"), []byte(""), 0644)
+
+	// regular files are looked at
+	err = ioutil.WriteFile(filepath.Join(tempdir, "foo"), []byte(""), 0644)
+	c.Assert(err, IsNil)
+
+	// normal subdirs are supported
+	err = os.MkdirAll(filepath.Join(tempdir, "bin"), 0755)
+	err = ioutil.WriteFile(filepath.Join(tempdir, "bin", "bar"), []byte("bar\n"), 0644)
+	c.Assert(err, IsNil)
+
+	// symlinks are ignored
+	err = os.Symlink("/dsafdsafsadf", filepath.Join(tempdir, "broken-link"))
+	c.Assert(err, IsNil)
+
+	// write file
+	err = writeDebianMd5sums(tempdir)
+	c.Assert(err, IsNil)
+
+	// check content
+	content, err := ioutil.ReadFile(filepath.Join(tempdir, "DEBIAN", "md5sums"))
+	c.Assert(err, IsNil)
+	c.Assert(string(content), Equals, `c157a79031e1c40f85931829bc5fc552  bin/bar
+d41d8cd98f00b204e9800998ecf8427e  foo
+`)
+}

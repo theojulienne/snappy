@@ -2,8 +2,10 @@ package snappy
 
 import (
 	"bufio"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -161,6 +163,37 @@ func dirSize(buildDir string) (string, error) {
 	return strings.Fields(string(output))[0], nil
 }
 
+func writeDebianMd5sums(buildDir string) error {
+	debianDir := filepath.Join(buildDir, "DEBIAN")
+	os.MkdirAll(debianDir, 0755)
+
+	md5sums, err := os.Create(filepath.Join(debianDir, "md5sums"))
+	if err != nil {
+		return err
+	}
+	defer md5sums.Close()
+
+	return filepath.Walk(buildDir, func(path string, info os.FileInfo, err error) error {
+		if strings.HasPrefix(path[len(buildDir):], "/DEBIAN/") {
+			return nil
+		}
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+		h := md5.New()
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		io.Copy(h, f)
+
+		s := fmt.Sprintf("%x  %s\n", h.Sum(nil), path[len(buildDir)+1:])
+		md5sums.Write([]byte(s))
+		return nil
+	})
+}
+
 func writeDebianControl(buildDir string, m *packageYaml) error {
 	debianDir := filepath.Join(buildDir, "DEBIAN")
 	if err := os.MkdirAll(debianDir, 0755); err != nil {
@@ -309,6 +342,11 @@ func Build(sourceDir string) (string, error) {
 	}
 
 	if err := writeDebianControl(buildDir, m); err != nil {
+		return "", err
+	}
+
+	// for click compat
+	if err := writeDebianMd5sums(buildDir); err != nil {
 		return "", err
 	}
 
