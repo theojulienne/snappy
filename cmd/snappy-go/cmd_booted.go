@@ -20,8 +20,8 @@ func (x *cmdBooted) Execute(args []string) (err error) {
 
 	parts, err := snappy.InstalledSnapsByType(snappy.SnapTypeCore)
 	if err != nil {
-		return err
+		return LogError(err)
 	}
 
-	return parts[0].(*snappy.SystemImagePart).MarkBootSuccessful()
+	return LogError(parts[0].(*snappy.SystemImagePart).MarkBootSuccessful())
 }

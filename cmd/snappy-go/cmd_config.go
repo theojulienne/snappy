@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"log"
 
 	"launchpad.net/snappy/snappy"
 )
@@ -29,7 +30,7 @@ func init() {
 	if _, err := parser.AddCommand("config", shortConfigHelp, longConfigHelp, &cmdConfigData); err != nil {
 		// panic here as something must be terribly wrong if there is an
 		// error here
-		panic(err)
+		log.Panic(err)
 	}
 }
 
@@ -59,7 +60,7 @@ func (x *cmdConfig) Execute(args []string) (err error) {
 
 	newConfig, err := snap.Config(configInput)
 	if err != nil {
-		return err
+		return LogError(err)
 	}
 	// output the new configuration
 	fmt.Println(newConfig)

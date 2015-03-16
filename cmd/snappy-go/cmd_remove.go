@@ -26,7 +26,7 @@ func (x *cmdRemove) Execute(args []string) (err error) {
 		fmt.Printf("Removing %s\n", part)
 
 		if err := snappy.Remove(part); err != nil {
-			return err
+			return LogError(err)
 		}
 	}
 

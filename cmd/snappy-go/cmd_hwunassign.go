@@ -31,7 +31,7 @@ func (x *cmdHWUnassign) Execute(args []string) (err error) {
 	}
 
 	if err := snappy.RemoveHWAccess(x.Positional.PackageName, x.Positional.DevicePath); err != nil {
-		return err
+		return LogError(err)
 	}
 
 	fmt.Printf("'%s' is no longer allowed to access '%s'\n", x.Positional.PackageName, x.Positional.DevicePath)

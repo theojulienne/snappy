@@ -37,7 +37,7 @@ func set(args []string) (err error) {
 		return err
 	}
 
-	return snappy.SetProperty(pkgname, args...)
+	return LogError(snappy.SetProperty(pkgname, args...))
 }
 
 func parseSetPropertyCmdline(args ...string) (pkgname string, out []string, err error) {

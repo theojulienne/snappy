@@ -24,12 +24,12 @@ func (x *cmdInstall) Execute(args []string) (err error) {
 
 	err = snappy.Install(args)
 	if err != nil {
-		return err
+		return LogError(err)
 	}
 	// call show versions afterwards
 	installed, err := snappy.ListInstalled()
 	if err != nil {
-		return err
+		return LogError(err)
 	}
 
 	showInstalledList(installed, os.Stdout)

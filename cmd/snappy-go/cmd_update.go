@@ -38,7 +38,7 @@ func update() error {
 
 		fmt.Printf("Installing %s (%s)\n", part.Name(), part.Version())
 		if err := part.Install(pbar); err != nil {
-			return err
+			return LogError(err)
 		}
 	}
 

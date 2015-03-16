@@ -36,7 +36,7 @@ func (x *cmdHWAssign) Execute(args []string) (err error) {
 			return nil
 		}
 
-		return err
+		return LogError(err)
 	}
 
 	fmt.Printf("'%s' is now allowed to access '%s'\n", x.Positional.PackageName, x.Positional.DevicePath)
