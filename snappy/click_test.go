@@ -453,7 +453,8 @@ services:
 const expectedService = `[Unit]
 Description=The docker app deployment mechanism
 After=apparmor.service
-Requires=apparmor.service
+Requires=apparmor.service local-fs.target
+After=network.target
 X-Snappy=yes
 
 [Service]

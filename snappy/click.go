@@ -381,7 +381,8 @@ func generateSnapServicesFile(service Service, baseDir string, aaProfile string,
 	serviceTemplate := `[Unit]
 Description={{.Description}}
 After=apparmor.service
-Requires=apparmor.service
+Requires=apparmor.service local-fs.target
+After=network.target
 X-Snappy=yes
 
 [Service]
