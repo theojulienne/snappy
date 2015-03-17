@@ -59,6 +59,9 @@ func (s *SnapTestSuite) SetUpTest(c *C) {
 
 	// ensure we do not look at the system
 	systemImageRoot = s.tempdir
+
+	// allow installing OEM test snaps in our tests
+	os.Setenv("SNAPPY_ALLOW_OEM_INSTALL", "1")
 }
 
 func (s *SnapTestSuite) TearDownTest(c *C) {

@@ -555,6 +555,9 @@ func installClick(snapFile string, flags InstallFlags) (err error) {
 	targetDir := snapAppsDir
 	// the "oem" parts are special
 	if manifest.Type == SnapTypeOem {
+		if os.Getenv("SNAPPY_ALLOW_OEM_INSTALL") == "" {
+			return ErrPackageNotInstallable
+		}
 		targetDir = snapOemDir
 	}
 

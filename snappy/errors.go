@@ -53,4 +53,8 @@ var (
 	// ErrSnapNotActive is returned if you try to unset a snap from
 	// active to inactive
 	ErrSnapNotActive = errors.New("snap not active")
+
+	// ErrPackageNotInstallable is returned when trying to install
+	// a special snap type like "oem"
+	ErrPackageNotInstallable = errors.New("snappy package type can not be installed directly")
 )

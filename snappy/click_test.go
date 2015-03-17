@@ -221,6 +221,7 @@ version: 1.0
 type: oem
 icon: foo.svg
 vendor: Foo Bar <foo@example.com>`)
+
 	err := installClick(snapFile, 0)
 	c.Assert(err, IsNil)
 
