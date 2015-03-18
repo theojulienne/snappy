@@ -28,18 +28,13 @@ package partition
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
-
-	"gopkg.in/yaml.v2"
 )
-
-var debug = false
 
 var signalHandlerRegistered = false
 
@@ -98,7 +93,7 @@ var (
 //   system-image archive.
 // - the type of bootloader that should be used for this system.
 // - expected system partition layout (single or dual rootfs's).
-const hardwareSpecFile = "hardware.yaml"
+var hardwareSpecFile = "hardware.yaml"
 
 // Directory that _may_ get automatically created on unpack that
 // contains updated hardware-specific boot assets (such as initrd, kernel)
@@ -140,6 +135,7 @@ type Interface interface {
 	//        to expose even less implementation details?
 	SyncBootloaderFiles() error
 	IsNextBootOther() bool
+	HandleAssets(hardwareYamlFile, sourceDir string, withCleanup bool) error
 
 	// run the function f with the otherRoot mounted
 	RunWithOther(rw MountOption, f func(otherRoot string) (err error)) (err error)
@@ -152,8 +148,6 @@ type Partition struct {
 
 	// just root partitions
 	roots []string
-
-	hardwareSpecFile string
 }
 
 type blockDevice struct {
@@ -171,20 +165,7 @@ type blockDevice struct {
 	mountpoint string
 }
 
-// Representation of HARDWARE_SPEC_FILE
-type hardwareSpecType struct {
-	Kernel          string         `yaml:"kernel"`
-	Initrd          string         `yaml:"initrd"`
-	DtbDir          string         `yaml:"dtbs"`
-	PartitionLayout string         `yaml:"partition-layout"`
-	Bootloader      bootloaderName `yaml:"bootloader"`
-}
-
 func init() {
-	if os.Getenv("SNAPPY_DEBUG") != "" {
-		debug = true
-	}
-
 	if !signalHandlerRegistered {
 		setupSignalHandler()
 		signalHandlerRegistered = true
@@ -420,7 +401,6 @@ func New() *Partition {
 	p := new(Partition)
 
 	p.getPartitionDetails()
-	p.hardwareSpecFile = path.Join(p.cacheDir(), hardwareSpecFile)
 
 	return p
 }
@@ -513,38 +493,19 @@ func (p *Partition) cacheDir() string {
 	return defaultCacheDir
 }
 
-func (p *Partition) hardwareSpec() (hardwareSpecType, error) {
-	h := hardwareSpecType{}
-
-	data, err := ioutil.ReadFile(p.hardwareSpecFile)
-	// if hardware.yaml does not exist it just means that there was no
-	// device part in the update.
-	if os.IsNotExist(err) {
-		return h, ErrNoHardwareYaml
-	} else if err != nil {
-		return h, err
-	}
-
-	if err := yaml.Unmarshal([]byte(data), &h); err != nil {
-		return h, err
-	}
-
-	return h, nil
-}
-
 // Return full path to the main assets directory
 func (p *Partition) assetsDir() string {
-	return path.Join(p.cacheDir(), assetsDir)
+	return filepath.Join(p.cacheDir(), assetsDir)
 }
 
 // Return the full path to the hardware-specific flash assets directory.
 func (p *Partition) flashAssetsDir() string {
-	return path.Join(p.cacheDir(), flashAssetsDir)
+	return filepath.Join(p.cacheDir(), flashAssetsDir)
 }
 
 // MountTarget gets the full path to the mount target directory
 func (p *Partition) MountTarget() string {
-	return path.Join(p.cacheDir(), mountTarget)
+	return filepath.Join(p.cacheDir(), mountTarget)
 }
 
 func (p *Partition) getPartitionDetails() (err error) {
@@ -723,7 +684,7 @@ func (p *Partition) bindmountRequiredFilesystems() (err error) {
 	}
 
 	for _, fs := range requiredChrootMounts {
-		target := path.Join(p.MountTarget(), fs)
+		target := filepath.Join(p.MountTarget(), fs)
 
 		err := bindmountAndAddToGlobalMountList(fs, target)
 		if err != nil {
@@ -737,6 +698,16 @@ func (p *Partition) bindmountRequiredFilesystems() (err error) {
 // Undo the effects of BindmountRequiredFilesystems()
 func (p *Partition) unmountRequiredFilesystems() (err error) {
 	return undoMounts(bindMounts)
+}
+
+// HandleAssets will deal with hardware assets
+func (p *Partition) HandleAssets(hardwareYaml, sourceDir string, cleanup bool) error {
+	bootloader, err := getBootloader(p)
+	if err != nil {
+		return err
+	}
+
+	return bootloader.HandleAssets(filepath.Join(p.cacheDir(), hardwareSpecFile), p.cacheDir(), true)
 }
 
 func (p *Partition) toggleBootloaderRootfs() (err error) {
@@ -758,5 +729,5 @@ func (p *Partition) toggleBootloaderRootfs() (err error) {
 		return err
 	}
 
-	return bootloader.HandleAssets()
+	return bootloader.HandleAssets(filepath.Join(p.cacheDir(), hardwareSpecFile), p.cacheDir(), true)
 }

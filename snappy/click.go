@@ -640,6 +640,11 @@ func installClick(snapFile string, flags InstallFlags) (err error) {
 		return err
 	}
 
+	// the "oem" parts are special
+	if manifest.Type == SnapTypeOem {
+		newPartition().HandleAssets(filepath.Join(instDir, "meta", "package.yaml"), instDir, false)
+	}
+
 	return nil
 }
 

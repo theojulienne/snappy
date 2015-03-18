@@ -198,17 +198,18 @@ func (u *uboot) SyncBootFiles() (err error) {
 	return runCommand("/bin/cp", "-a", srcDir, destDir)
 }
 
-func (u *uboot) HandleAssets() (err error) {
+func (u *uboot) HandleAssets(hardwareSpecFile, sourceDir string, withCleanup bool) (err error) {
 	// check if we have anything, if there is no hardware yaml, there is nothing
 	// to process.
-	hardware, err := u.partition.hardwareSpec()
+	hardware, err := parseHardwareYaml(hardwareSpecFile)
 	if err == ErrNoHardwareYaml {
 		return nil
 	} else if err != nil {
 		return err
 	}
-	// ensure to remove the file once we are done
-	defer os.Remove(u.partition.hardwareSpecFile)
+	if withCleanup {
+		defer os.Remove(hardwareSpecFile)
+	}
 
 	// validate bootloader
 	if hardware.Bootloader != u.Name() {
@@ -230,22 +231,23 @@ func (u *uboot) HandleAssets() (err error) {
 	}
 
 	// install kernel+initrd
-	for _, file := range []string{hardware.Kernel, hardware.Initrd} {
+	for _, file := range []string{hardware.Kernel, hardware.Initrd, hardware.hardware.DtbFile} {
 
 		if file == "" {
 			continue
 		}
 
 		// expand path
-		path := path.Join(u.partition.cacheDir(), file)
+		path := path.Join(sourceDir, file)
 
 		if !helpers.FileExists(path) {
 			return fmt.Errorf("can not find file %s", path)
 		}
 
 		// ensure we remove the dir later
-		defer os.RemoveAll(filepath.Dir(path))
-
+		if withCleanup {
+			defer os.RemoveAll(filepath.Dir(path))
+		}
 		if err := runCommand("/bin/cp", path, destDir); err != nil {
 			return err
 		}
@@ -255,10 +257,12 @@ func (u *uboot) HandleAssets() (err error) {
 	//       fully speced
 
 	// install .dtb files
-	dtbSrcDir := filepath.Join(u.partition.cacheDir(), hardware.DtbDir)
+	dtbSrcDir := filepath.Join(sourceDir, hardware.DtbDir)
 	if helpers.FileExists(dtbSrcDir) {
 		// ensure we cleanup the source dir
-		defer os.RemoveAll(dtbSrcDir)
+		if withCleanup {
+			defer os.RemoveAll(dtbSrcDir)
+		}
 
 		dtbDestDir := path.Join(destDir, "dtbs")
 		if err := os.MkdirAll(dtbDestDir, dirMode); err != nil {
@@ -284,8 +288,10 @@ func (u *uboot) HandleAssets() (err error) {
 		// MLO + uImage files since they are not specified in
 		// the hardware spec. So for now, just remove them.
 
-		if err := os.RemoveAll(flashAssetsDir); err != nil {
-			return err
+		if withCleanup {
+			if err := os.RemoveAll(flashAssetsDir); err != nil {
+				return err
+			}
 		}
 	}
 

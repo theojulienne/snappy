@@ -40,7 +40,7 @@ type bootLoader interface {
 
 	// Install any hardware-specific files that system-image
 	// downloaded.
-	HandleAssets() error
+	HandleAssets(hardwareYamlFile string, sourceDir string, cleanup bool) error
 
 	// Return the value of the specified bootloader variable
 	GetBootVar(name string) (string, error)

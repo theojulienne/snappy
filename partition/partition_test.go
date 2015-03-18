@@ -2,7 +2,6 @@ package partition
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,40 +60,6 @@ func (s *PartitionTestSuite) TearDownTest(c *C) {
 	bootloaderUbootConfigFile = bootloaderUbootConfigFileReal
 	bootloaderUbootEnvFile = bootloaderUbootEnvFileReal
 
-}
-
-func makeHardwareYaml(c *C, hardwareYaml string) (outPath string) {
-	tmp, err := ioutil.TempFile(c.MkDir(), "hw-")
-	c.Assert(err, IsNil)
-	defer tmp.Close()
-
-	if hardwareYaml == "" {
-		hardwareYaml = `
-kernel: assets/vmlinuz
-initrd: assets/initrd.img
-dtbs: assets/dtbs
-partition-layout: system-AB
-bootloader: u-boot
-`
-	}
-	_, err = tmp.Write([]byte(hardwareYaml))
-	c.Assert(err, IsNil)
-
-	return tmp.Name()
-}
-
-func (s *PartitionTestSuite) TestHardwareSpec(c *C) {
-	p := New()
-	c.Assert(p, NotNil)
-
-	p.hardwareSpecFile = makeHardwareYaml(c, "")
-	hw, err := p.hardwareSpec()
-	c.Assert(err, IsNil)
-	c.Assert(hw.Kernel, Equals, "assets/vmlinuz")
-	c.Assert(hw.Initrd, Equals, "assets/initrd.img")
-	c.Assert(hw.DtbDir, Equals, "assets/dtbs")
-	c.Assert(hw.PartitionLayout, Equals, bootloaderSystemAB)
-	c.Assert(hw.Bootloader, Equals, bootloaderNameUboot)
 }
 
 func mockRunLsblkDualSnappy() (output []string, err error) {
@@ -306,7 +271,7 @@ func (b *mockBootloader) SyncBootFiles() error {
 	b.SyncBootFilesCalled = true
 	return nil
 }
-func (b *mockBootloader) HandleAssets() error {
+func (b *mockBootloader) HandleAssets(string, string, bool) error {
 	b.HandleAssetsCalled = true
 	return nil
 }

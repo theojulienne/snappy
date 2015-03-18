@@ -134,7 +134,7 @@ func (g *grub) SyncBootFiles() (err error) {
 	return nil
 }
 
-func (g *grub) HandleAssets() (err error) {
+func (g *grub) HandleAssets(string, string, bool) (err error) {
 
 	// NOP - since grub is used on generic hardware, it doesn't
 	// need to make use of hardware-specific assets

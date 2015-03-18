@@ -127,10 +127,16 @@ type MockPartition struct {
 	toggleNextBootCalled      bool
 	markBootSuccessfulCalled  bool
 	syncBootloaderFilesCalled bool
+	handleAssetsCalled        bool
 }
 
 func (p *MockPartition) ToggleNextBoot() error {
 	p.toggleNextBootCalled = true
+	return nil
+}
+
+func (p *MockPartition) HandleAssets(string, string, bool) error {
+	p.handleAssetsCalled = true
 	return nil
 }
 
