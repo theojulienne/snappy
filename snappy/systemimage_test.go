@@ -123,39 +123,6 @@ func (s *SITestSuite) TestUpdateHasUpdate(c *C) {
 	c.Assert(parts[0].DownloadSize(), Equals, int64(123166488))
 }
 
-type MockPartition struct {
-	toggleNextBootCalled      bool
-	markBootSuccessfulCalled  bool
-	syncBootloaderFilesCalled bool
-	handleAssetsCalled        bool
-}
-
-func (p *MockPartition) ToggleNextBoot() error {
-	p.toggleNextBootCalled = true
-	return nil
-}
-
-func (p *MockPartition) HandleAssets(string, string, bool) error {
-	p.handleAssetsCalled = true
-	return nil
-}
-
-func (p *MockPartition) MarkBootSuccessful() error {
-	p.markBootSuccessfulCalled = true
-	return nil
-}
-func (p *MockPartition) SyncBootloaderFiles() error {
-	p.syncBootloaderFilesCalled = true
-	return nil
-}
-func (p *MockPartition) IsNextBootOther() bool {
-	return false
-}
-
-func (p *MockPartition) RunWithOther(option partition.MountOption, f func(otherRoot string) (err error)) (err error) {
-	return f("/other")
-}
-
 func (s *SITestSuite) TestSystemImagePartInstallUpdatesPartition(c *C) {
 	// add a update
 	mockSystemImageIndexJSON = fmt.Sprintf(mockSystemImageIndexJSONTemplate, "2")

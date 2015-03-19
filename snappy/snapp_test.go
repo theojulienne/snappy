@@ -22,10 +22,13 @@ type SnapTestSuite struct {
 
 var _ = Suite(&SnapTestSuite{})
 
+var mockPartition *MockPartition
+
 func (s *SnapTestSuite) SetUpTest(c *C) {
 	s.tempdir = c.MkDir()
 	newPartition = func() (p partition.Interface) {
-		return new(MockPartition)
+		mockPartition = new(MockPartition)
+		return mockPartition
 	}
 
 	snapDataDir = filepath.Join(s.tempdir, "/var/lib/apps/")
@@ -577,4 +580,20 @@ type: oem
 
 	// we just ensure that the right header is set
 	repo.Details("xkcd")
+}
+
+func (s *SnapTestSuite) TestOemSnapHandlesAssets(c *C) {
+	// install custom oem snap with store-id
+	snapFile := makeTestSnapPackage(c, `name: oem-test
+version: 1.0
+vendor: mvo
+store:
+ id: my-store
+type: oem
+hardware:
+ dtb: bin/foo
+`)
+	err := installClick(snapFile, 0)
+	c.Assert(err, IsNil)
+	c.Assert(mockPartition.handleAssetsCalled, Equals, true)
 }

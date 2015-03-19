@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"launchpad.net/snappy/helpers"
+	"launchpad.net/snappy/partition"
 
 	"gopkg.in/yaml.v2"
 	. "launchpad.net/gocheck"
@@ -153,4 +154,37 @@ func (m *MockProgressMeter) Write(buf []byte) (n int, err error) {
 }
 func (m *MockProgressMeter) Finished() {
 	m.finished = true
+}
+
+type MockPartition struct {
+	toggleNextBootCalled      bool
+	markBootSuccessfulCalled  bool
+	syncBootloaderFilesCalled bool
+	handleAssetsCalled        bool
+}
+
+func (p *MockPartition) ToggleNextBoot() error {
+	p.toggleNextBootCalled = true
+	return nil
+}
+
+func (p *MockPartition) HandleAssets(string, string, bool) error {
+	p.handleAssetsCalled = true
+	return nil
+}
+
+func (p *MockPartition) MarkBootSuccessful() error {
+	p.markBootSuccessfulCalled = true
+	return nil
+}
+func (p *MockPartition) SyncBootloaderFiles() error {
+	p.syncBootloaderFilesCalled = true
+	return nil
+}
+func (p *MockPartition) IsNextBootOther() bool {
+	return false
+}
+
+func (p *MockPartition) RunWithOther(option partition.MountOption, f func(otherRoot string) (err error)) (err error) {
+	return f("/other")
 }
