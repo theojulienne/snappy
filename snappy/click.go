@@ -28,6 +28,10 @@ import (
 	"github.com/mvo5/goconfigparser"
 )
 
+// for compat with the old snappy, once that is gone we can drop to a
+// different user
+const dropPrivsUser = "clickpkg"
+
 type clickAppHook map[string]string
 
 type clickManifest struct {
@@ -568,31 +572,40 @@ func findBinaryInPath(name, path string) string {
 //
 // To do this reliably in go we need to exec a helper as we can not
 // just fork() and drop privs in the child (no support for stock fork in go)
-func unpackWithDropPrivs(d *clickdeb.ClickDeb, instDir string) error {
+func unpackWithDropPrivs(d *clickdeb.ClickDeb, targetDir string) error {
+
 	// no need to drop privs, we are not root
 	if syscall.Getuid() != 0 {
-		return d.Unpack(instDir)
+		return d.Unpack(targetDir)
 	}
 
-	// find priv helper executable
-	privHelper := ""
-	for _, path := range []string{"PATH", "GOPATH"} {
-		privHelper = findBinaryInPath("snappy-go", os.Getenv(path))
-		if privHelper != "" {
-			break
+	// we need to drop privs
+	uid, gid, err := helpers.LookupUseridGid(dropPrivsUser)
+	if err != nil {
+		return err
+	}
+
+	// create target dir for the user
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return err
+	}
+
+	for _, p := range []string{d.Path, targetDir} {
+		if err := os.Chown(p, uid, gid); err != nil {
+			return err
 		}
 	}
-	if privHelper == "" {
-		return ErrUnpackHelperNotFound
-	}
 
-	cmd := exec.Command(privHelper, "internal-unpack", d.Path, instDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	fmt.Println(os.Getuid())
+	err = helpers.Sudo(dropPrivsUser, func() error {
+		return d.Unpack(targetDir)
+	})
+	fmt.Println(os.Getuid())
+
+	if err != nil {
 		return &ErrUnpackFailed{
 			snapFile: d.Path,
-			instDir:  instDir,
+			instDir:  targetDir,
 			origErr:  err,
 		}
 	}

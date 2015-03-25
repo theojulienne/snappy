@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -12,6 +13,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -241,3 +243,77 @@ func CurrentHomeDir() (string, error) {
 	return user.HomeDir, nil
 }
 
+// LookupUseridGid returns the uid, gid for the given username
+func LookupUseridGid(username string) (uid, gid int, err error) {
+	u, err := user.Lookup(username)
+	if err != nil {
+		return -1, -1, err
+	}
+	uid, err = strconv.Atoi(u.Uid)
+	if err != nil {
+		return -1, -1, err
+	}
+
+	gid, err = strconv.Atoi(u.Gid)
+	if err != nil {
+		return -1, -1, err
+	}
+
+	return uid, gid, nil
+}
+
+// Sudo will run the given function with a different user
+func Sudo(newUser string, f func() error) error {
+	uid, gid, err := LookupUseridGid(newUser)
+	if err != nil {
+		return err
+	}
+
+	errCh := make(chan error)
+	go func() {
+		// important:
+		// we reply on the "feature" that golang does not sync
+		// the os.Setuid() accross its threads, see
+		// https://github.com/golang/go/issues/1435
+		//
+		// if this ever changes we need to revert commit r248 from
+		// the "snappy-drop-privs2" branch and move to a external
+		// helper
+		runtime.LockOSThread()
+		
+		if err := syscall.Setgroups([]int{gid}); err != nil {
+			errCh <- err
+			return
+		}
+
+		if err := syscall.Setgid(gid); err != nil {
+			errCh <- err
+			return
+		}
+		if err := syscall.Setuid(uid); err != nil {
+			errCh <- err
+			return
+		}
+
+		// extra paranoia
+		if syscall.Getuid() != uid || syscall.Getgid() != gid {
+			errCh <- fmt.Errorf("Droping privileges failed, uid is %v, gid is %v", syscall.Getuid(), syscall.Getgid())
+			return
+		}
+
+		// run the user supplied function
+		if err := f(); err != nil {
+			errCh <- err
+			return
+		}
+
+		errCh <- nil
+		runtime.Goexit()
+	}()
+
+	if err := <-errCh; err != nil {
+		return err
+	}
+
+	return nil
+}

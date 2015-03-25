@@ -65,6 +65,7 @@ var (
 	ErrUnpackHelperNotFound = errors.New("unpack helper not found, do you hae snappy installed in your PATH or GOPATH?")
 )
 
+// ErrUnpackFailed is returned if a error happend during unpacking a snap
 type ErrUnpackFailed struct {
 	snapFile string
 	instDir  string
@@ -73,6 +74,7 @@ type ErrUnpackFailed struct {
 
 func (e *ErrUnpackFailed) Error() string {
 	return fmt.Sprintf("unpack %s to %s failed with %s", e.snapFile, e.instDir, e.origErr)
+}
 
 // ErrSignature is returned if a snap failed the signature verification
 type ErrSignature struct {
