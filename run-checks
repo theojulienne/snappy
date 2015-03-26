@@ -3,6 +3,9 @@
 set -ev
 
 if which goctest >/dev/null; then
+    # goctest is a colorizing wrapper for "go test", which you can get at
+    # https://github.com/chipaca/goctest
+    # drop it somewhere in your path, and it'll get pikced up by this.
     goctest="goctest"
 else
     goctest="go test"
