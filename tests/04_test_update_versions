@@ -1,4 +1,0 @@
-test() {
-       T='[0-9]+ updated components are available with your current stability settings.'
-       test_regexp "$T" sudo $SNAPPY update-versions
-}

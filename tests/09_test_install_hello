@@ -1,6 +1,6 @@
 test() {
-       T="hello-world[[:space:]]+edge"
-       test_regexp "$T" sudo $SNAPPY install hello-world
+       T="webdm[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+[0-9]+\.[0-9]+"    
+       test_regexp "$T" sudo $SNAPPY install com.ubuntu.snappy.hello-world
        
        T="Hello World!"
        test_equal "$T" echo.hello-world

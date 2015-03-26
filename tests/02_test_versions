@@ -1,7 +1,7 @@
 test() {
-    T="ubuntu-core.*edge"
-    test_regexp "$T" sudo $SNAPPY versions
+    T="ubuntu-core.*201?"
+    test_regexp "$T" $SNAPPY list
 
-    T="Part.*Tag.*Installed.*Available.*Fingerprint.*Active"
-    test_regexp "$T" sudo $SNAPPY versions
+    T="Name.*Date.*Version.*Developer"
+    test_regexp "$T" $SNAPPY list
 }

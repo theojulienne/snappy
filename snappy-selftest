@@ -4,7 +4,7 @@ set -e
 
 . tests/framework
 
-SNAPPY=snappy
+SNAPPY=snappy-go
 
 MYDIR=$(dirname $0)
 for test in $MYDIR/tests/*_test_*; do
