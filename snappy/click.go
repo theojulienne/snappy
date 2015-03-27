@@ -42,6 +42,7 @@ import (
 	"launchpad.net/snappy/helpers"
 	"launchpad.net/snappy/logger"
 
+	"github.com/juju/loggo"
 	"github.com/mvo5/goconfigparser"
 )
 
@@ -729,6 +730,9 @@ func installClick(snapFile string, flags InstallFlags, ag agreer) (err error) {
 		}
 		return err
 	}
+
+	l := loggo.GetLogger(logger.LoggerName)
+	l.Infof("Installed %s (version %s)", manifest.Name, manifest.Version)
 
 	return nil
 }

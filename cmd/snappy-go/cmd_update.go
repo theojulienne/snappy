@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/juju/loggo"
+	"launchpad.net/snappy/logger"
 	"launchpad.net/snappy/priv"
 	"launchpad.net/snappy/snappy"
 )
@@ -60,6 +62,8 @@ func update() error {
 		if err := part.Install(pbar, 0); err != nil {
 			return err
 		}
+		l := loggo.GetLogger(logger.LoggerName)
+		l.Infof("Installed %s (version %s)", part.Name(), part.Version())
 	}
 
 	if len(updates) > 0 {

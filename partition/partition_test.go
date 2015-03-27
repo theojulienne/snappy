@@ -159,6 +159,9 @@ func (s *PartitionTestSuite) TestSnappyDualRoot(c *C) {
 	c.Assert(other.name, Equals, "system-b")
 	c.Assert(other.device, Equals, "/dev/sda4")
 	c.Assert(other.parentName, Equals, "/dev/sda")
+
+	c.Assert(p.RootfsLabel(), Equals, root.name)
+	c.Assert(p.OtherRootfsLabel(), Equals, other.name)
 }
 
 func (s *PartitionTestSuite) TestRunWithOtherDualParitionRO(c *C) {

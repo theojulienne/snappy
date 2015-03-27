@@ -142,6 +142,12 @@ type Interface interface {
 
 	// run the function f with the otherRoot mounted
 	RunWithOther(rw MountOption, f func(otherRoot string) (err error)) (err error)
+
+	// Returns the label for the current partition
+	RootfsLabel() string
+
+	// Returns the label for the other partition
+	OtherRootfsLabel() string
 }
 
 // Partition is the type to interact with the partition
@@ -621,6 +627,16 @@ func (p *Partition) rootPartition() (result *blockDevice) {
 	}
 
 	return nil
+}
+
+// RootfsLabel returns the partition label for the current rootfs.
+func (p *Partition) RootfsLabel() string {
+	return p.rootPartition().name
+}
+
+// OtherRootfsLabel returns the partition label for the other rootfs.
+func (p *Partition) OtherRootfsLabel() string {
+	return p.otherRootPartition().name
 }
 
 // Return pointer to blockDevice representing the "other" root

@@ -27,7 +27,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/juju/loggo"
 	"launchpad.net/snappy/coreconfig"
+	"launchpad.net/snappy/logger"
 	"launchpad.net/snappy/partition"
 
 	"github.com/mvo5/goconfigparser"
@@ -127,6 +129,21 @@ func (s *SystemImagePart) Date() time.Time {
 	return s.lastUpdate
 }
 
+// toggleNextBootAndLog toggles the rootfs that will be used for the
+// next boot and logs details of the change.
+func (s *SystemImagePart) toggleNextBootAndLog() (err error) {
+	err = s.partition.ToggleNextBoot()
+	if err != nil {
+		return err
+	}
+
+	l := loggo.GetLogger(logger.LoggerName)
+	l.Infof("Updated system to boot from %s partition on next boot",
+		s.partition.OtherRootfsLabel())
+
+	return nil
+}
+
 // SetActive sets the snap active
 func (s *SystemImagePart) SetActive() (err error) {
 	isNextBootOther := s.partition.IsNextBootOther()
@@ -139,7 +156,7 @@ func (s *SystemImagePart) SetActive() (err error) {
 		return nil
 	}
 
-	return s.partition.ToggleNextBoot()
+	return s.toggleNextBootAndLog()
 }
 
 // Install installs the snap
@@ -175,10 +192,16 @@ func (s *SystemImagePart) Install(pb ProgressMeter, flags InstallFlags) (err err
 
 	// Check that the final system state is as expected.
 	if err = s.verifyUpgradeWasApplied(); err != nil {
-		return err
+		return logger.LogError(err)
 	}
 
-	return s.partition.ToggleNextBoot()
+	l := loggo.GetLogger(logger.LoggerName)
+
+	l.Infof("Updated %s partition to version %s",
+		s.partition.OtherRootfsLabel(),
+		s.version)
+
+	return s.toggleNextBootAndLog()
 }
 
 // Ensure the expected version update was applied to the expected partition.
@@ -242,6 +265,11 @@ func (s *SystemImagePart) NeedsReboot() bool {
 func (s *SystemImagePart) MarkBootSuccessful() (err error) {
 
 	return s.partition.MarkBootSuccessful()
+}
+
+// RootfsLabel returns the label for the current root filesystem
+func (s *SystemImagePart) RootfsLabel() string {
+	return s.partition.RootfsLabel()
 }
 
 // Channel returns the system-image-server channel used

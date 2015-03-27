@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/juju/loggo"
 	"launchpad.net/snappy/logger"
 )
 
@@ -81,7 +82,14 @@ func Install(name string, flags InstallFlags) (err error) {
 		// act only on parts that are downloadable
 		if !part.IsInstalled() {
 			pbar := NewTextProgress(part.Name())
-			return logger.LogError(part.Install(pbar, flags))
+			err = part.Install(pbar, flags)
+
+			if err != nil {
+				return logger.LogError(err)
+			}
+
+			l := loggo.GetLogger(logger.LoggerName)
+			l.Infof("Installed %s (version %s)", part.Name(), part.Version())
 		}
 	}
 

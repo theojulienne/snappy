@@ -20,6 +20,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/juju/loggo"
+	"launchpad.net/snappy/logger"
 	"launchpad.net/snappy/priv"
 	"launchpad.net/snappy/snappy"
 )
@@ -59,6 +61,11 @@ func (x *cmdHWAssign) Execute(args []string) (err error) {
 		return err
 	}
 
-	fmt.Printf("'%s' is now allowed to access '%s'\n", x.Positional.PackageName, x.Positional.DevicePath)
+	msg := fmt.Sprintf("'%s' is now allowed to access '%s'", x.Positional.PackageName, x.Positional.DevicePath)
+	fmt.Printf("%s\n", msg)
+
+	l := loggo.GetLogger(logger.LoggerName)
+	l.Infof("%s", msg)
+
 	return nil
 }

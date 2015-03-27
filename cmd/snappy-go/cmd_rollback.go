@@ -20,6 +20,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/juju/loggo"
+	"launchpad.net/snappy/logger"
 	"launchpad.net/snappy/priv"
 	"launchpad.net/snappy/snappy"
 )
@@ -61,7 +63,12 @@ func (x *cmdRollback) Execute(args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Setting %s to version %s\n", pkg, nowVersion)
+
+	msg := fmt.Sprintf("Set %s to version %s", pkg, nowVersion)
+	fmt.Printf("%s\n", msg)
+
+	l := loggo.GetLogger(logger.LoggerName)
+	l.Infof("%s", msg)
 
 	return nil
 }

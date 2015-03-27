@@ -21,6 +21,8 @@ import (
 	"launchpad.net/snappy/logger"
 	"launchpad.net/snappy/priv"
 	"launchpad.net/snappy/snappy"
+
+	"github.com/juju/loggo"
 )
 
 type cmdBooted struct {
@@ -46,5 +48,14 @@ func (x *cmdBooted) Execute(args []string) (err error) {
 		return logger.LogError(err)
 	}
 
-	return logger.LogError(parts[0].(*snappy.SystemImagePart).MarkBootSuccessful())
+	si := parts[0].(*snappy.SystemImagePart)
+	if err = si.MarkBootSuccessful(); err != nil {
+		return logger.LogError(err)
+	}
+
+	l := loggo.GetLogger(logger.LoggerName)
+	l.Infof("Partition %s (version %s) booted successfully",
+		si.RootfsLabel(), si.Version())
+
+	return nil
 }

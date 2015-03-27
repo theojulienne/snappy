@@ -33,7 +33,9 @@ import (
 	"time"
 
 	"launchpad.net/snappy/helpers"
+	"launchpad.net/snappy/logger"
 
+	"github.com/juju/loggo"
 	"gopkg.in/yaml.v2"
 )
 
@@ -313,7 +315,13 @@ func (s *SnapPart) Uninstall() (err error) {
 		return ErrPackageNotRemovable
 	}
 
-	return removeClick(s.basedir)
+	if err = removeClick(s.basedir); err != nil {
+		return logger.LogError(err)
+	}
+	l := loggo.GetLogger(logger.LoggerName)
+	l.Infof("Removed %s (version %s)", s.m.Name, s.m.Version)
+
+	return nil
 }
 
 // Config is used to to configure the snap
