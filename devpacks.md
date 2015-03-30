@@ -86,6 +86,7 @@ based on the selected devpacks:
 
 ## Open questions
 
+* No multiarch binaries support to distribute e.g. bin/arm-linux-gnueabihf/xyz.
 * Are these the right formats (pkg-config and plain lib+headers)?
 * Select static vs dynamic via snapcraft --type static/--type shared?
 * Build for multiple architectures in one pass?
