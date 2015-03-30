@@ -12,8 +12,8 @@ workflow. Devpacks are only available at build time.
 * One devpack may provide multiple tools or multiple libraries.
 * Devpacks must be coinstallable.
 
-However devpacks are not meant to be installed at runtime. Apps must
-carry all the relevant runtime bits.
+Devpacks are not installed at runtime. Apps must carry all the relevant
+runtime bits.
 
 ## Usage
 ### devpack yaml
@@ -25,7 +25,7 @@ When creating devpacks, meta/packaging.yaml would contain something like:
     architecture: host-arch1, host-arch2
     build-architecture: build-arch1, build-arch2
     link-type: shared, static
-    type: sdk
+    type: devpack
     pkg-config-libraries:
       - name: library1
         pkg-config-libdir: library1/lib
@@ -46,7 +46,8 @@ This devpack offers two independent libraries; library1 is defined in
 pkg-config form; library2 is provided directly.
 
 `link-type: shared, static` indicates that both static and shared libraries
-are provided.
+are provided. link-type may also just have the value `shared` or
+`static` when only one type of libraries is supported.
 
 The layout of pkg-config-libdir and libdir is in the usual multi-arch triplet
 format (e.g. lib/arm-linux-gnueabihf) albeit libdirs themselves also searched.
@@ -54,14 +55,17 @@ format (e.g. lib/arm-linux-gnueabihf) albeit libdirs themselves also searched.
 ### Using devpacks
 
 Developers install devpacks into their build environment. Typically a clean
-chroot is created with snapcraft:
+environment is created with snapcraft:
     snapcraft create env1 --base 15.04
 
-By default, this creates a chroot with basic development tools and selects
+This is typically a container which is started / stopped as needed by
+snapcraft when using the environment.
+
+By default, this uses a chroot with basic development tools and selects
 the default set of target architectures (e.g. amd64 and armhf).
 
 Devpacks are installed on top with:
-    snapcraft addsdk env1 foo-sdk
+    snapcraft addpack env1 foo-devpack
 
 Additional build tools may be installed from Ubuntu with:
     snapcraft run apt-get install make
