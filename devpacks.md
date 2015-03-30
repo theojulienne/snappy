@@ -59,9 +59,10 @@ environment is created with snapcraft:
     snapcraft create env1 --base 15.04
 
 This is a container which is started / stopped as needed by snapcraft when
-using the environment. By default, this uses a chroot with basic development
-tools and selects the default set of target architectures (e.g. amd64 and
-armhf).
+using the environment. By default, this uses a multiarch chroot of the
+architecture of the developer system and with support for the default set of
+target architectures (e.g. amd64 and armhf) and with some basic development
+tools.
 
 Devpacks containing libraries and/or build tools are installed on top with:
     snapcraft addpack env1 foo-devpack
