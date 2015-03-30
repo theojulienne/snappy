@@ -3,10 +3,10 @@
 Devpacks are a specific type of Snap packages part of the development
 workflow. Devpacks are only available at build time.
 
-* Devpacks are mainly a transport mechanism for software libraries.
+* Devpacks are mainly a transport mechanism for software libraries and build
+  tools.
 * Devpacks typically permit embedding a copy of the provided software
   libraries in an application during build.
-* Devpacks may provide additional build tools.
 * Like apps, devpacks may support one, multiple or all architectures.
 * Devpacks are self-contained and do not depend on other devpacks.
 * One devpack may provide multiple tools or multiple libraries.
@@ -58,13 +58,12 @@ Developers install devpacks into their build environment. Typically a clean
 environment is created with snapcraft:
     snapcraft create env1 --base 15.04
 
-This is typically a container which is started / stopped as needed by
-snapcraft when using the environment.
+This is a container which is started / stopped as needed by snapcraft when
+using the environment. By default, this uses a chroot with basic development
+tools and selects the default set of target architectures (e.g. amd64 and
+armhf).
 
-By default, this uses a chroot with basic development tools and selects
-the default set of target architectures (e.g. amd64 and armhf).
-
-Devpacks are installed on top with:
+Devpacks containing libraries and/or build tools are installed on top with:
     snapcraft addpack env1 foo-devpack
 
 Additional build tools may be installed from Ubuntu with:
