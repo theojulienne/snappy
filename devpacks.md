@@ -87,8 +87,11 @@ based on the selected devpacks:
 * if a static build is selected, the above variables will be adjusted
   accordingly.
 
-## Open questions
+## Open questions / TODO
 
 * No multiarch binaries support to distribute e.g. bin/arm-linux-gnueabihf/xyz.
 * Build for multiple architectures in one pass?
+* Multiple set of CFLAGS/LDFLAGS
+* Install into /usr/local/lib or some other dir to ease consumption of devpack
+  libs?
 
