@@ -36,6 +36,7 @@ When creating devpacks, meta/packaging.yaml would contain something like:
     binaries:
       - name: bin/build-tool
         description: "Description of build tool"
+    populate-root-files: "lib/*", "share/"
 
 This devpack is to build apps that will run on host-arch1 or host-arch2 (if
 unspecified, arch: all is assumed). It provides an additional build tool
@@ -74,7 +75,8 @@ The build is achieved with:
     snapcraft --static run make
 or:
     snapcraft --shared run make
-where make is the preferred command to build the project.
+where make is the preferred command to build the project. The build environment
+is setup before the build and teared down after the build.
 
 Snapcraft makes some environment variables available to the build process
 based on the selected devpacks:
@@ -87,6 +89,12 @@ based on the selected devpacks:
 * if a static build is selected, the above variables will be adjusted
   accordingly.
 
+Lastly, dependent files such as libraries, helpers, data files etc. are copied
+into the target application directory:
+    snapcraft populate-root --target=runtime-files/
+this copies files listed in the populate-root-files section from all installed
+devpacks into the target directory.
+
 ## Open questions / TODO
 
 * No multiarch binaries support to distribute e.g. bin/arm-linux-gnueabihf/xyz.
@@ -94,4 +102,5 @@ based on the selected devpacks:
 * Multiple set of CFLAGS/LDFLAGS
 * Install into /usr/local/lib or some other dir to ease consumption of devpack
   libs?
+* populate-root script and/or inspection tool to copy just the required libs
 
